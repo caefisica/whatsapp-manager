@@ -46,27 +46,11 @@ async function start() {
 
         try {
             switch (cleanName) {
-                case 'ping':
-                  await sock.sendMessage(sender, {
-                    text: 'Pong!'
-                  });
-                  break;
-                case 'echo':
-                  await sock.sendMessage(sender, {
-                    text: args.join(' ')
-                  });
-                  break;
                 case 'translate':
                   const text = args.join(' ');
                   console.log('Translating:', text, 'to English');
                   const translatedText = await commands.general.translateText(text, 'en');
                   await sock.sendMessage(sender, { text: translatedText });
-                  break;
-                case 'time':
-                  const currentTime = new Date();
-                  await sock.sendMessage(sender, {
-                    text: `La hora en el server es: ${currentTime}`
-                  });
                   break;
                 case 'weather':
                   const location = args.join(' ');
@@ -77,17 +61,10 @@ async function start() {
                   await sock.sendMessage(sender, { text: 'oh hello there' }, { quoted: message });
                   break;
                 case 'mention':
-                  await sock.sendMessage(sender, { text: '@51948394155', mentions: ['51948394155@s.whatsapp.net'] }, { quoted: message });
+                  await sock.sendMessage(sender, { text: `@${OWNER_ID}`, mentions: [`@${OWNER_ID}@s.whatsapp.net`] }, { quoted: message });
                   break;
                 case 'location':
-                  const reactionMessage = {
-                      react: {
-                          text: "💖", // use an empty string to remove the reaction
-                          key: message.key
-                      }
-                  }
-
-                  await sock.sendMessage(sender, { location: { degreesLatitude: -12.060161363038157, degreesLongitude: -77.08165388037558 } }, reactionMessage);
+                  await sock.sendMessage(sender, { location: { degreesLatitude: -12.060161363038157, degreesLongitude: -77.08165388037558 } });
                   break;
                 case 'contact':
                   const vcard = 'BEGIN:VCARD\n'
@@ -106,66 +83,20 @@ async function start() {
                       }
                   )
                   break;
-                case 'buttons':
-                  /* Not working yet */
-                  const buttons = [
-                    {buttonId: 'id1', buttonText: {displayText: 'Button 1'}, type: 1},
-                    {buttonId: 'id2', buttonText: {displayText: 'Button 2'}, type: 1},
-                    {buttonId: 'id3', buttonText: {displayText: 'Button 3'}, type: 1}
-                  ]
-                  
-                  const buttonMessage = {
-                      text: "Hi it's button message",
-                      footer: 'Hello World',
-                      buttons: buttons,
-                      headerType: 1
-                  }
-                  
-                  const sendMsg = await sock.sendMessage(sender, buttonMessage)
-                  break;
                 case 'template':
                   const templateButtons = [
-                    {index: 1, urlButton: {displayText: '⭐ Star Baileys on GitHub!', url: 'https://github.com/adiwajshing/Baileys'}},
-                    {index: 2, callButton: {displayText: 'Call me!', phoneNumber: '+1 (234) 5678-901'}},
-                    {index: 3, quickReplyButton: {displayText: 'This is a reply, just like normal buttons!', id: 'id-like-buttons-message'}},
+                    {index: 1, urlButton: {displayText: '⭐ Perimeter Institute', url: 'https://perimeterinstitute.ca/'}},
+                    {index: 2, callButton: {displayText: 'Llámame!', phoneNumber: '+51 948394155'}},
+                    {index: 3, quickReplyButton: {displayText: 'Contesta un mensaje aaa!', id: 'id-like-buttons-message'}},
                   ]
                   
                   const templateMessage = {
-                      text: "Hi it's a template message",
-                      footer: 'Hello World',
+                      text: "Plantilla",
+                      footer: 'Holalala',
                       templateButtons: templateButtons
                   }
                   
                   const templateMsg = await sock.sendMessage(sender, templateMessage)
-                  break;
-                case 'lists':
-                  /* Not working yet */
-                  const sections = [
-                    {
-                    title: "Section 1",
-                    rows: [
-                        {title: "Option 1", rowId: "option1"},
-                        {title: "Option 2", rowId: "option2", description: "This is a description"}
-                    ]
-                    },
-                   {
-                    title: "Section 2",
-                    rows: [
-                        {title: "Option 3", rowId: "option3"},
-                        {title: "Option 4", rowId: "option4", description: "This is a description V2"}
-                    ]
-                    },
-                  ]
-                  
-                  const listMessage = {
-                    text: "This is a list",
-                    footer: "nice footer, link: https://google.com",
-                    title: "Amazing boldfaced list title",
-                    buttonText: "Required, text on the button to view the list",
-                    sections
-                  }
-                  
-                  const sendLists = await sock.sendMessage(sender, listMessage);
                   break;
                 case 'links':
                   const sentLinkMsg  = await sock.sendMessage(sender, { text: 'Terrible lo que se viene, https://www.youtube.com/watch?v=WJMBzYraE7I' });
@@ -176,24 +107,6 @@ async function start() {
                     { audio: { url: "./Media/audio.mp3" }, mimetype: 'audio/mp4' },
                     { url: "Media/audio.mp3" },
                   )
-                  break;
-                case 'buttonwith':
-                  /* Not working yet */
-                  const buttonsWithimage = [
-                    {buttonId: 'id1', buttonText: {displayText: 'Button 1'}, type: 1},
-                    {buttonId: 'id2', buttonText: {displayText: 'Button 2'}, type: 1},
-                    {buttonId: 'id3', buttonText: {displayText: 'Button 3'}, type: 1}
-                  ]
-                  
-                  const buttonMessageWithimage = {
-                      image: {url: 'https://i.imgur.com/PwEwUhA.jpeg'},
-                      caption: "Hi it's button message",
-                      footer: 'aaaaaa',
-                      buttons: buttonsWithimage,
-                      headerType: 4
-                  }
-
-                  const buttonMessageWithImagen = await sock.sendMessage(sender, buttonMessageWithimage)
                   break;
                 default:
                   await sock.sendMessage(sender, {
