@@ -69,9 +69,9 @@ async function start() {
                 case 'contact':
                   const vcard = 'BEGIN:VCARD\n'
                               + 'VERSION:3.0\n' 
-                              + 'FN:La Jenn\n'
+                              + 'FN:Admin\n'
                               + 'ORG:Universidad San Marcos;\n' 
-                              + 'TEL;type=CELL;type=VOICE;waid=5212282289371:+52 1 228 228 9371\n'
+                              + `TEL;type=CELL;type=VOICE;waid=${OWNER_ID}:${OWNER_ID}\n` // Second number is the XXX XXX XXX
                               + 'END:VCARD'
                   const sentMsg  = await sock.sendMessage(
                       sender,
@@ -86,7 +86,7 @@ async function start() {
                 case 'template':
                   const templateButtons = [
                     {index: 1, urlButton: {displayText: '⭐ Perimeter Institute', url: 'https://perimeterinstitute.ca/'}},
-                    {index: 2, callButton: {displayText: 'Llámame!', phoneNumber: '+51 948394155'}},
+                    {index: 2, callButton: {displayText: 'Llámame!', phoneNumber: `+${OWNER_ID}`}},
                     {index: 3, quickReplyButton: {displayText: 'Contesta un mensaje aaa!', id: 'id-like-buttons-message'}},
                   ]
                   
