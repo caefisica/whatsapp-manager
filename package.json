@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev": "nodemon .\\index.js --ignore ./client/ --ignore ./baileys_store.json",
     "start": "node .",
     "clean": "shx rm -rf node_modules package-lock.json"
   },
@@ -22,9 +23,14 @@
   "devDependencies": {
     "@adiwajshing/baileys": "github:WhiskeySockets/Baileys",
     "@adiwajshing/keyed-db": "^0.2.4",
+    "baileys-bottle": "^2.1.2",
     "dotenv": "^16.1.4",
+    "link-preview-js": "^3.0.4",
     "node-fetch": "^3.3.1",
+    "nodemon": "^2.0.22",
+    "pino": "^8.14.1",
     "qrcode-terminal": "^0.12.0",
+    "sharp": "^0.30.7",
     "shx": "^0.3.4"
   }
 }
