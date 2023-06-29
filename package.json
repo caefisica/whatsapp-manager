@@ -4,9 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon .\\index.js --ignore ./client/ --ignore ./baileys_store.json",
-    "start": "node .",
-    "clean": "shx rm -rf node_modules package-lock.json"
+    "dev": "nodemon .\\index.js",
+    "start": "node index.js",
+    "clean:packages": "shx rm -rf node_modules package-lock.json",
+    "clean:session": "shx rm -rf auth_info_baileys baileys_store.json",
+    "lint": "eslint . --ext .js commands/",
+    "lint:fix": "eslint . --ext .js commands/ --fix"
   },
   "repository": "git+https://github.com/totallynotdavid/SumiBot.git",
   "keywords": [
@@ -23,14 +26,31 @@
   "devDependencies": {
     "@adiwajshing/baileys": "github:WhiskeySockets/Baileys",
     "@adiwajshing/keyed-db": "^0.2.4",
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "axios": "^0.27.2",
     "baileys-bottle": "^2.1.2",
     "dotenv": "^16.1.4",
+    "eslint": "^8.43.0",
+    "fluent-ffmpeg": "^2.1.2",
+    "jimp": "^0.16.13",
     "link-preview-js": "^3.0.4",
     "node-fetch": "^3.3.1",
     "nodemon": "^2.0.22",
     "pino": "^8.14.1",
     "qrcode-terminal": "^0.12.0",
-    "sharp": "^0.30.7",
-    "shx": "^0.3.4"
+    "sharp": "^0.30.0",
+    "shx": "^0.3.4",
+    "wa-sticker-formatter": "^4.4.4"
+  },
+  "nodemonConfig": {
+    "ignore": [
+      "**/auth_info_baileys/**",
+      "baileys_store.json",
+      "**/media_storage/**"
+    ],
+    "delay": 2500
+  },
+  "dependencies": {
+    "@vitalets/google-translate-api": "^9.2.0"
   }
 }
