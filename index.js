@@ -1,13 +1,17 @@
 const {
-  default: makeWASocket,
-  makeInMemoryStore,
-  useMultiFileAuthState,
-  MessageType, MessageOptions, Mimetype
+    default: makeWASocket,
+    makeInMemoryStore,
+    useMultiFileAuthState,
+    fetchLatestBaileysVersion,
+    makeCacheableSignalKeyStore,
+    isJidBroadcast,
+    DisconnectReason // MessageType, MessageOptions, Mimetype
 } = require('@adiwajshing/baileys');
 
+const Boom = require('@hapi/boom')
 const path = require('path');
 const pino = require('pino');
-require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
+require('dotenv').config({ path: path.resolve(__dirname, './.env') });
 
 const { OWNER_ID } = process.env;
 
@@ -17,158 +21,143 @@ const generalCommandPrefix = '!';
 const adminCommandPrefix = '@';
 
 async function start() {
-  const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
+    const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
+    
+    const { version, isLatest } = await fetchLatestBaileysVersion();
+    console.log(`using WA v${version.join(".")}, isLatest: ${isLatest}`);
 
-  const sock = makeWASocket({
-      auth: state,
-      printQRInTerminal: true,
-      logger: pino({ level: 'debug' }),
-      generateHighQualityLinkPreview: true,
-  });
+    let silentLogs = pino({ level: "silent" }); // change to 'debug' to see what kind of stuff the lib is doing
 
-  sock.ev.on('creds.update', saveCreds);
+    const sock = makeWASocket({
+        auth: {
+          creds: state.creds,
+          keys: makeCacheableSignalKeyStore(state.keys, silentLogs),
+        },
+        printQRInTerminal: true,
+        version,
+        logger: silentLogs,
+        generateHighQualityLinkPreview: true,
+        shouldIgnoreJid: (jid) => isJidBroadcast(jid),
+    });
 
-  sock.ev.on('messages.upsert', async ({ messages }) => {
-    const message = messages[0];
-    if (message.message && message.message.conversation) {
-        const command = message.message.conversation;
-        const sender = messages[0].key.remoteJid;
+    sock.ev.on('creds.update', saveCreds);
 
-        const [name, ...args] = command.split(' ');
+    sock.ev.on('messages.upsert', async ({ messages }) => {
+      const message = messages[0];
+      const sender = message.key.remoteJid;
+      const messageContent = message.message;
+  
+      if (!messageContent) {
+          return;
+      }
+  
+      const command = messageContent.conversation 
+                      || messageContent.imageMessage?.caption 
+                      || messageContent.videoMessage?.caption 
+                      || '';
 
-        const isGeneralCommand = name.startsWith(generalCommandPrefix);
-        const isAdminCommand = name.startsWith(adminCommandPrefix) && adminUsers.includes(sender);
-        if (!isGeneralCommand && !isAdminCommand) {
-            return;
-        }
+      const [name, ...args] = command.split(' ');
 
-        const cleanName = name.substring(1).toLowerCase();
+      console.log(`Message from ${sender}: ${command} in ${message.key.remoteJid}`)
 
-        try {
-            switch (cleanName) {
-                case 'translate':
+      const isGeneralCommand = name.startsWith(generalCommandPrefix);
+      const isAdminCommand = name.startsWith(adminCommandPrefix) && adminUsers.includes(sender);
+  
+      if (!isGeneralCommand && !isAdminCommand) {
+          return;
+      }
+  
+      const cleanName = name.substring(1).toLowerCase();
+      
+      console.log('Command:', cleanName)
+      console.log(message)
+
+      try {
+          switch (cleanName) {
+              case 'translate': {
                   const text = args.join(' ');
-                  console.log('Translating:', text, 'to English');
-                  const translatedText = await commands.general.translateText(text, 'en');
+                  const [translatedText] = await Promise.all([
+                      commands.general.translateText(text, 'en')
+                  ]);
                   await sock.sendMessage(sender, { text: translatedText });
                   break;
-                case 'weather':
+              }
+              case 'weather': {
                   const location = args.join(' ');
-                  const weather = await commands.general.getWeather(location);
+                  const [weather] = await Promise.all([
+                      commands.general.getWeather(location)
+                  ]);
                   await sock.sendMessage(sender, { text: weather });
                   break;
-                case 'reply':
-                  await sock.sendMessage(sender, { text: 'oh hello there' }, { quoted: message });
-                  break;
-                case 'mention':
-                  await sock.sendMessage(sender, { text: `@${OWNER_ID}`, mentions: [`@${OWNER_ID}@s.whatsapp.net`] }, { quoted: message });
-                  break;
-                case 'location':
-                  await sock.sendMessage(sender, { location: { degreesLatitude: -12.060161363038157, degreesLongitude: -77.08165388037558 } });
-                  break;
-                case 'contact':
-                  const vcard = 'BEGIN:VCARD\n'
-                              + 'VERSION:3.0\n' 
-                              + 'FN:Admin\n'
-                              + 'ORG:Universidad San Marcos;\n' 
-                              + `TEL;type=CELL;type=VOICE;waid=${OWNER_ID}:${OWNER_ID}\n` // Second number is the XXX XXX XXX
-                              + 'END:VCARD'
-                  const sentMsg  = await sock.sendMessage(
-                      sender,
-                      { 
-                          contacts: { 
-                              displayName: 'David', 
-                              contacts: [{ vcard }] 
-                          }
-                      }
-                  )
-                  break;
-                case 'template':
-                  const templateButtons = [
-                    {index: 1, urlButton: {displayText: '⭐ Perimeter Institute', url: 'https://perimeterinstitute.ca/'}},
-                    {index: 2, callButton: {displayText: 'Llámame!', phoneNumber: `+${OWNER_ID}`}},
-                    {index: 3, quickReplyButton: {displayText: 'Contesta un mensaje aaa!', id: 'id-like-buttons-message'}},
-                  ]
-                  
-                  const templateMessage = {
-                      text: "Plantilla",
-                      footer: 'Holalala',
-                      templateButtons: templateButtons
-                  }
-                  
-                  const templateMsg = await sock.sendMessage(sender, templateMessage)
-                  break;
-                case 'links':
-                  const sentLinkMsg  = await sock.sendMessage(sender, { text: 'Terrible lo que se viene, https://www.youtube.com/watch?v=WJMBzYraE7I' });
-                  break;
-                case 'mp3':
-                  await sock.sendMessage(
-                    sender, 
-                    { audio: { url: "./Media/audio.mp3" }, mimetype: 'audio/mp4' },
-                    { url: "Media/audio.mp3" },
-                  )
-                  break;
-                default:
+              }
+              case 'sticker': {
+                await commands.general.sticker.handler(sock, message, command);
+                break;
+              }
+              default: {
                   await sock.sendMessage(sender, {
-                    text: `Lo siento, este comando no existe: ${name}`
+                      text: `Lo siento, este comando no existe: ${name}`
                   });
-            }
-
-            const reactionMessage = {
+                  break;
+              }
+          }
+  
+          const reactionMessage = {
               react: {
-                  text: "✅",
+                  text: '✅',
                   key: message.key
               }
-            }
+          };
+  
+          await sock.sendMessage(sender, reactionMessage);
+      } catch (error) {
+          console.error('Error processing message:', error);
+      }
+    });
 
-            await sock.sendMessage(sender, reactionMessage);
-        } catch (error) {
-            console.error('Error processing message:', error);
+    sock.ev.on('connection.update', (update) => {
+      const { connection, lastDisconnect } = update;
+      if(connection === 'close') {
+        const shouldReconnect = lastDisconnect.error instanceof Boom && lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut;
+        console.log('connection closed due to ', lastDisconnect.error, ', reconnecting ', shouldReconnect);
+        if(shouldReconnect) {
+          start();
         }
-    }
-  });
-
-  sock.ev.on('connection.update', async ({ connection }) => {
-      if (connection === 'close') {
-          try {
-              console.log('Reconectando...');
-              await start();
-          } catch (error) {
-              console.error('Error restarting connection:', error);
-          }
+      } else if(connection === 'open') {
+        console.log('opened connection');
       }
-  });
+    });
 
-  const store = makeInMemoryStore({});
-  try {
-    await store.readFromFile('./baileys_store.json');
-  } catch (error) {
-    console.error('Error reading from file:', error);
-  }
-
-  setInterval(() => {
+    const store = makeInMemoryStore({});
     try {
-        store.writeToFile('./baileys_store.json');
+        await store.readFromFile('./baileys_store.json');
     } catch (error) {
-        console.error('Error writing to file:', error);
+        console.error('Error reading from file:', error);
     }
-  }, 10_000);
 
-  store.bind(sock.ev);
+    setInterval(() => {
+        try {
+            store.writeToFile('./baileys_store.json');
+        } catch (error) {
+            console.error('Error writing to file:', error);
+        }
+    }, 10_000);
 
-  sock.ev.on('chats.set', () => {
-      console.log('got chats', store.chats.all());
-  });
+    store.bind(sock.ev);
 
-  sock.ev.on('contacts.set', () => {
-      console.log('got contacts', Object.values(store.contacts));
-  });
+    sock.ev.on('chats.set', () => {
+        console.log('got chats', store.chats.all());
+    });
 
-  sock.ev.on('connection.update', update => {
-      if (update.qr) {
-          console.log('Escanea este QR con tu teléfono: ' + update.qr);
-      }
-  });
+    sock.ev.on('contacts.set', () => {
+        console.log('got contacts', Object.values(store.contacts));
+    });
+
+    sock.ev.on('connection.update', update => {
+        if (update.qr) {
+            console.log('Escanea este QR con tu teléfono: ' + update.qr);
+        }
+    });
 
 }
 

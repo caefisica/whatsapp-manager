@@ -2,6 +2,6 @@
 const general = require('./general');
 
 module.exports = {
-  // admins,
-  general,
+    // admins,
+    general,
 };

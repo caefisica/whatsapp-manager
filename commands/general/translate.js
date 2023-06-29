@@ -1,12 +1,8 @@
-async function translateText(text, targetLang = 'en') {
-  const fetch = (await import('node-fetch')).default;
-  const response = await fetch('https://libretranslate.de/translate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ q: text, source: "es", target: targetLang })
-  });
-  const data = await response.json();
-  return data.translatedText;
+const { translate } = require('@vitalets/google-translate-api');
+
+async function translateText(textToBeTranslated, targetLang = 'en') {
+    const { text } = await translate(textToBeTranslated, { from: 'es', to: targetLang });
+    return text;
 }
 
 module.exports = translateText;
