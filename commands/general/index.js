@@ -43,18 +43,18 @@ module.exports = {
             });
         }
     },
-    spotify: {
+    spot: {
         handler: async function(sock, message, messageObject, args) {
             const trackName = args.join(' ');
             const token = await getAccessToken();
-            const preview_url = await searchTrack(trackName, token);
+            const { previewUrl, trackFoundName, artistFoundName } = await searchTrack(trackName, token);
 
-            if (preview_url) {
+            if (previewUrl) {
                 await sock.sendMessage(
                     messageObject.sender, 
                     { 
                         audio: { 
-                            url: preview_url 
+                            url: previewUrl 
                         },
                         ptt: true,
                     },
@@ -64,6 +64,9 @@ module.exports = {
                         filename: `${trackName}.mp3` 
                     }
                 );
+                await sock.sendMessage(messageObject.sender, { 
+                    text: `${messageObject.botEmoji} La canción que encontramos es: *${trackFoundName}* de *${artistFoundName}*` 
+                });
             } else {
                 await sock.sendMessage(
                     messageObject.sender, 

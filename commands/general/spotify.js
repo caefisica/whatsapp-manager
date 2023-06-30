@@ -5,10 +5,6 @@ require('dotenv').config({ path: '../../.env' })
 const client_id = process.env.SPOTIFY_CLIENT_ID;
 const client_secret = process.env.SPOTIFY_CLIENT_SECRET;
 
-console.log('We are using the following Spotify credentials:');
-console.log(`Client ID: ${client_id}`);
-console.log(`Client Secret: ${client_secret}`);
-
 let accessToken = null;
 let tokenTimestamp = null;
 
@@ -34,20 +30,24 @@ async function getAccessToken() {
 }
 
 async function searchTrack(trackName, token) {
-    const response = await axios.get(`https://api.spotify.com/v1/search?q=${encodeURIComponent(trackName)}&type=track&limit=1`, {
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    });
+  const response = await axios.get(`https://api.spotify.com/v1/search?q=${encodeURIComponent(trackName)}&type=track&limit=5`, {
+      headers: {
+          'Authorization': `Bearer ${token}`
+      }
+  });
 
-    console.log('The track name is:', trackName)
-    console.log('The response is:', response.data.tracks.items)
+  let previewUrl = null;
+  let trackFoundName = null;
+  for (let item of response.data.tracks.items) {
+      if (item.preview_url) {
+          previewUrl = item.preview_url;
+          trackFoundName = item.name;
+          artistFoundName = item.artists[0].name;
+          break;
+      }
+  }
 
-    if (response.data.tracks.items.length > 0) {
-        return response.data.tracks.items[0].preview_url;
-    } else {
-        return null;
-    }
+  return { previewUrl, trackFoundName, artistFoundName };
 }
 
 module.exports = {
