@@ -9,13 +9,14 @@ const {
 } = require('@adiwajshing/baileys');
 
 require('dotenv').config();
-const Boom = require('@hapi/boom');  // Para el manejo de errores
-const pino = require('pino');       // Para el manejo de logs
+const Boom = require('@hapi/boom');   // Para el manejo de errores
+const pino = require('pino');         // Para el manejo de logs
 
 const generalCommandPrefix = '!';
 const premiumCommandPrefix = '#';
 const ownerCommandPrefix = '@';
 const botEmoji = '🤖';
+const completeEmoji = '✅';
 
 const commands = require('./commands');
 
@@ -45,9 +46,9 @@ async function start() {
     sock.ev.on('creds.update', saveCreds);
 
     sock.ev.on('messages.upsert', async ({ messages }) => {
-        console.log('New message received:', messages[0]);
         const message = messages[0];
         const sender = message.key.remoteJid;
+        const senderNumber = messages[0].key.participant;
     
         // Check whether the message is from a group first
         if (!sender.endsWith('@g.us')) {
@@ -57,13 +58,8 @@ async function start() {
         const isFromMe = message.key.fromMe;
         const senderName = message.pushName;
         const groupNumber = message.key.remoteJid;
-
-        console.log('Is from me:', isFromMe);
-        console.log('Sender name:', senderName);
-        console.log('Group number:', groupNumber);
-    
-        const isPremiumUser = premiumUsers.includes(sender); // Assuming premiumUsers is an array of user ids
-        const isAdmin = adminUsers.includes(sender); // Assuming adminUsers is an array of user ids
+        const isPremiumUser = premiumUsers.includes(sender);
+        const isAdmin = adminUsers.includes(sender);
     
         let commandPrefix;
         if (isAdmin) {
@@ -79,30 +75,26 @@ async function start() {
                       || message.message.videoMessage?.caption 
                       || '';
     
-        // Check whether the message is a command
         if (!textMessage.startsWith(commandPrefix)) {
-            console.log(`Message does not start with correct prefix. Expected prefix: ${commandPrefix}, received message: ${textMessage}`);
+            console.log(`Message is not a command. Expected prefix: ${commandPrefix}, received message: ${textMessage}`);
             return;
         }
     
         const messageType = message.message.conversation 
-            ? 'text' 
-            : message.message.imageMessage
-                ? 'image' 
-                : message.message.videoMessage
-                    ? 'video'
-                    : null;
-        console.log('Message type:', messageType);
-    
+                            ? 'text' 
+                            : message.message.imageMessage
+                            ? 'image' 
+                            : message.message.videoMessage
+                            ? 'video'
+                            : null;
+
         const isDocument = messageType === 'document';
         const isVideo = messageType === 'video';
         const isImage = messageType === 'image';
         const isSticker = messageType === 'sticker';
         const hasQuotedMessage = 'quotedMessage' in message.message;
-    
-        console.log(`Properties of the message, isDocument: ${isDocument}, isVideo: ${isVideo}, isImage: ${isImage}, isSticker: ${isSticker}, hasQuotedMessage: ${hasQuotedMessage}`);
-    
-        // Create the messageObject
+
+        // Create the messageObject to pass to the command handler
         const messageObject = {
             isDocument,
             isVideo,
@@ -113,6 +105,7 @@ async function start() {
             sender,
             groupNumber,
             senderName,
+            senderNumber,
             isFromMe,
             isPremiumUser,
             isAdmin,
@@ -129,6 +122,14 @@ async function start() {
     
             if (commandSet[commandName]) {
                 await commandSet[commandName].handler(sock, message, messageObject, args);
+
+                const reactionMessage = {
+                  react: {
+                      text: completeEmoji,
+                      key: message.key
+                  }
+                };
+                await sock.sendMessage(sender, reactionMessage);
             } else {
                 throw new Error(`Unrecognized textMessage: ${commandName}`);
             }
