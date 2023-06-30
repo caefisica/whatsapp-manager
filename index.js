@@ -9,8 +9,8 @@ const {
 } = require('@adiwajshing/baileys');
 
 require('dotenv').config();
-const Boom = require('@hapi/boom');   // Para el manejo de errores
-const pino = require('pino');         // Para el manejo de logs
+const pino = require('pino');
+const { dropAuth } = require('./utils/reload')
 
 const generalCommandPrefix = '!';
 const premiumCommandPrefix = '#';
@@ -140,14 +140,26 @@ async function start() {
         }
     });
 
-    sock.ev.on('connection.update', (update) => {
+    sock.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect } = update;
+    
         if(connection === 'close') {
-            const shouldReconnect = lastDisconnect.error instanceof Boom && lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut;
+            const shouldReconnect = lastDisconnect.error && lastDisconnect.error.output && lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut;
             console.log('connection closed due to ', lastDisconnect.error, ', reconnecting ', shouldReconnect);
+    
             if(shouldReconnect) {
-                start();
+                console.log("Reconnecting in 5 sec to try to restore the connection...")
+                setTimeout(() => {
+                    start();
+                }, 5000);
+            } else {
+                console.log("You have been logged out. Restarting in 5 sec to scan new QR code...");
+                await dropAuth();
+                setTimeout(() => {
+                    start();
+                }, 5000);
             }
+    
         } else if(connection === 'open') {
             console.log('opened connection');
         }
