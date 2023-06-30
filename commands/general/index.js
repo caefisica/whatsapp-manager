@@ -1,3 +1,5 @@
+const { getAccessToken, searchTrack } = require('./spotify');
+
 module.exports = {
     translate: {
         handler: async function(sock, message, messageObject, args) {
@@ -41,4 +43,36 @@ module.exports = {
             });
         }
     },
+    spotify: {
+        handler: async function(sock, message, messageObject, args) {
+            const trackName = args.join(' ');
+            const token = await getAccessToken();
+            const preview_url = await searchTrack(trackName, token);
+
+            if (preview_url) {
+                await sock.sendMessage(
+                    messageObject.sender, 
+                    { 
+                        audio: { 
+                            url: preview_url 
+                        },
+                        ptt: true,
+                    },
+                    { 
+                        quoted: message, 
+                        mimetype: 'audio/mp4', 
+                        filename: `${trackName}.mp3` 
+                    }
+                );
+            } else {
+                await sock.sendMessage(
+                    messageObject.sender, 
+                    { 
+                        text: `${messageObject.botEmoji} Sorry, I couldn't find the track on Spotify.` 
+                    }
+                );
+            }
+        }
+    },
+  
 };
