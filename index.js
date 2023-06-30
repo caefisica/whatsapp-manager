@@ -70,7 +70,12 @@ async function start() {
             commandPrefix = generalCommandPrefix;
         }
     
-        const textMessage = message.message.conversation || message.message.extendedTextMessage?.text || message.message.imageMessage?.caption || message.message.videoMessage?.caption || '';
+        const textMessage = message.message && (
+            message.message.conversation ||
+            message.message.extendedTextMessage?.text ||
+            message.message.imageMessage?.caption ||
+            message.message.videoMessage?.caption
+        ) || '';
 
         if (!textMessage.startsWith(commandPrefix)) {
             return;
