@@ -81,12 +81,12 @@ async function start() {
         }
     
         const messageType = message.message.conversation 
-                            ? 'text' 
-                            : message.message.imageMessage
-                            ? 'image' 
-                            : message.message.videoMessage
-                            ? 'video'
-                            : null;
+            ? 'text' 
+            : message.message.imageMessage
+                ? 'image' 
+                : message.message.videoMessage
+                    ? 'video'
+                    : null;
 
         const isDocument = messageType === 'document';
         const isVideo = messageType === 'video';
@@ -124,10 +124,10 @@ async function start() {
                 await commandSet[commandName].handler(sock, message, messageObject, args);
 
                 const reactionMessage = {
-                  react: {
-                      text: completeEmoji,
-                      key: message.key
-                  }
+                    react: {
+                        text: completeEmoji,
+                        key: message.key
+                    }
                 };
                 await sock.sendMessage(sender, reactionMessage);
             } else {
