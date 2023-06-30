@@ -71,6 +71,7 @@ async function start() {
         }
     
         const textMessage = message.message.conversation 
+                      || message.message.extendedTextMessage?.text
                       || message.message.imageMessage?.caption 
                       || message.message.videoMessage?.caption 
                       || '';
@@ -86,7 +87,9 @@ async function start() {
                 ? 'image' 
                 : message.message.videoMessage
                     ? 'video'
-                    : null;
+                    : message.message.extendedTextMessage
+                      ? 'text'
+                      : null;
 
         const isDocument = messageType === 'document';
         const isVideo = messageType === 'video';
