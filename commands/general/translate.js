@@ -5,4 +5,4 @@ async function translateText(textToBeTranslated, targetLang = 'en') {
     return text;
 }
 
-module.exports = translateText;
+module.exports = { translateText };

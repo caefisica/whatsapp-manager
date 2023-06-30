@@ -1,49 +1,49 @@
-const fs = require("fs").promises;
-const { downloadMediaMessage } = require("@adiwajshing/baileys");
-const { Sticker, StickerTypes } = require("wa-sticker-formatter");
+const fs = require('fs').promises;
+const { downloadMediaMessage } = require('@adiwajshing/baileys');
+const { Sticker, StickerTypes } = require('wa-sticker-formatter');
 
 const getRandom = (ext) => {
-  return `${Math.floor(Math.random() * 10000)}${ext}`;
+    return `${Math.floor(Math.random() * 10000)}${ext}`;
 };
 
-const handler = async (sock, message, caption) => {
-  let packName = "BOT 🤖";
-  let authorName = "davibot";
+const handler = async (sock, message, messageObject, args) => {
+    let packName = messageObject.senderName;
+    let authorName = 'davibot';
 
-  const args = caption.split(' ').slice(1); // Split caption into array
-  const args1 = args[0];
-  const isCrop = args1 === "c" || args1 === "crop";
+    const isCrop = (args && args.length > 0) && (args[0] === 'c' || args[0] === 'crop');
+    const quality = 70;
 
-  if (!message.message) return;
-  const messageType = Object.keys(message.message)[0]// get what type of message it is -- text, image, video
+    const messageType = Object.keys(message.message)[0];// get what type of message it is -- text, image, video
 
-  if (messageType === 'imageMessage' || messageType === 'videoMessage') {
-    const buffer = await downloadMediaMessage(
-        message,
-        'buffer',
-        { },
-        { 
-            logger: console,
-            reuploadRequest: sock.updateMediaMessage
-        }
-    )
+    if (messageType === 'imageMessage' || messageType === 'videoMessage') {
+        const buffer = await downloadMediaMessage(
+            message,
+            'buffer',
+            {},
+            {
+                logger: console,
+                reuploadRequest: sock.updateMediaMessage
+            }
+        );
 
-    const stickerMake = new Sticker(buffer, {
-      pack: packName,
-      author: authorName,
-      type: isCrop ? StickerTypes.CROPPED : StickerTypes.FULL,
-      quality: 70,
-    });
+        const stickerMake = new Sticker(buffer, {
+            pack: packName,
+            author: authorName,
+            type: isCrop ? StickerTypes.CROPPED : StickerTypes.FULL,
+            quality: quality,
+        });
 
-    const stickerFileName = getRandom(".webp");
-    await stickerMake.toFile(stickerFileName);
-    await sock.sendMessage(message.key.remoteJid, {
-      sticker: await fs.readFile(stickerFileName),
-    });
-    await fs.unlink(stickerFileName);
-  }
+        const stickerFileName = getRandom('.webp');
+        await stickerMake.toFile(stickerFileName);
+        const sticker = await fs.readFile(stickerFileName);
+        await sock.sendMessage(
+            message.key.remoteJid,
+            {sticker: sticker}
+        );
+        await fs.unlink(stickerFileName);
+    }
 };
 
 module.exports = {
-  handler,
+    handler,
 };

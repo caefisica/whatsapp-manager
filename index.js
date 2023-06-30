@@ -5,33 +5,35 @@ const {
     fetchLatestBaileysVersion,
     makeCacheableSignalKeyStore,
     isJidBroadcast,
-    DisconnectReason // MessageType, MessageOptions, Mimetype
+    DisconnectReason                  // MessageType, MessageOptions, Mimetype
 } = require('@adiwajshing/baileys');
 
-const Boom = require('@hapi/boom')
-const path = require('path');
-const pino = require('pino');
-require('dotenv').config({ path: path.resolve(__dirname, './.env') });
+require('dotenv').config();
+const Boom = require('@hapi/boom');  // Para el manejo de errores
+const pino = require('pino');       // Para el manejo de logs
 
-const { OWNER_ID } = process.env;
+const generalCommandPrefix = '!';
+const premiumCommandPrefix = '#';
+const ownerCommandPrefix = '@';
+const botEmoji = '🤖';
 
 const commands = require('./commands');
+
+const { OWNER_ID } = process.env;
+const premiumUsers = [`${OWNER_ID}@s.whatsapp.net`];
 const adminUsers = [`${OWNER_ID}@s.whatsapp.net`];
-const generalCommandPrefix = '!';
-const adminCommandPrefix = '@';
 
 async function start() {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
-    
     const { version, isLatest } = await fetchLatestBaileysVersion();
-    console.log(`using WA v${version.join(".")}, isLatest: ${isLatest}`);
+    console.log(`Using WA v${version.join('.')}, isLatest: ${isLatest}`);
 
-    let silentLogs = pino({ level: "silent" }); // change to 'debug' to see what kind of stuff the lib is doing
+    let silentLogs = pino({ level: 'silent' }); // change to 'debug' to see what kind of stuff the lib is doing
 
     const sock = makeWASocket({
         auth: {
-          creds: state.creds,
-          keys: makeCacheableSignalKeyStore(state.keys, silentLogs),
+            creds: state.creds,
+            keys: makeCacheableSignalKeyStore(state.keys, silentLogs),
         },
         printQRInTerminal: true,
         version,
@@ -43,89 +45,109 @@ async function start() {
     sock.ev.on('creds.update', saveCreds);
 
     sock.ev.on('messages.upsert', async ({ messages }) => {
-      const message = messages[0];
-      const sender = message.key.remoteJid;
-      const messageContent = message.message;
-  
-      if (!messageContent) {
-          return;
-      }
-  
-      const command = messageContent.conversation 
-                      || messageContent.imageMessage?.caption 
-                      || messageContent.videoMessage?.caption 
+        console.log('New message received:', messages[0]);
+        const message = messages[0];
+        const sender = message.key.remoteJid;
+    
+        // Check whether the message is from a group first
+        if (!sender.endsWith('@g.us')) {
+            return;
+        }
+    
+        const isFromMe = message.key.fromMe;
+        const senderName = message.pushName;
+        const groupNumber = message.key.remoteJid;
+
+        console.log('Is from me:', isFromMe);
+        console.log('Sender name:', senderName);
+        console.log('Group number:', groupNumber);
+    
+        const isPremiumUser = premiumUsers.includes(sender); // Assuming premiumUsers is an array of user ids
+        const isAdmin = adminUsers.includes(sender); // Assuming adminUsers is an array of user ids
+    
+        let commandPrefix;
+        if (isAdmin) {
+            commandPrefix = ownerCommandPrefix; 
+        } else if (isPremiumUser) {
+            commandPrefix = premiumCommandPrefix;
+        } else {
+            commandPrefix = generalCommandPrefix;
+        }
+    
+        const textMessage = message.message.conversation 
+                      || message.message.imageMessage?.caption 
+                      || message.message.videoMessage?.caption 
                       || '';
-
-      const [name, ...args] = command.split(' ');
-
-      console.log(`Message from ${sender}: ${command} in ${message.key.remoteJid}`)
-
-      const isGeneralCommand = name.startsWith(generalCommandPrefix);
-      const isAdminCommand = name.startsWith(adminCommandPrefix) && adminUsers.includes(sender);
-  
-      if (!isGeneralCommand && !isAdminCommand) {
-          return;
-      }
-  
-      const cleanName = name.substring(1).toLowerCase();
-      
-      console.log('Command:', cleanName)
-      console.log(message)
-
-      try {
-          switch (cleanName) {
-              case 'translate': {
-                  const text = args.join(' ');
-                  const [translatedText] = await Promise.all([
-                      commands.general.translateText(text, 'en')
-                  ]);
-                  await sock.sendMessage(sender, { text: translatedText });
-                  break;
-              }
-              case 'weather': {
-                  const location = args.join(' ');
-                  const [weather] = await Promise.all([
-                      commands.general.getWeather(location)
-                  ]);
-                  await sock.sendMessage(sender, { text: weather });
-                  break;
-              }
-              case 'sticker': {
-                await commands.general.sticker.handler(sock, message, command);
-                break;
-              }
-              default: {
-                  await sock.sendMessage(sender, {
-                      text: `Lo siento, este comando no existe: ${name}`
-                  });
-                  break;
-              }
-          }
-  
-          const reactionMessage = {
-              react: {
-                  text: '✅',
-                  key: message.key
-              }
-          };
-  
-          await sock.sendMessage(sender, reactionMessage);
-      } catch (error) {
-          console.error('Error processing message:', error);
-      }
+    
+        // Check whether the message is a command
+        if (!textMessage.startsWith(commandPrefix)) {
+            console.log(`Message does not start with correct prefix. Expected prefix: ${commandPrefix}, received message: ${textMessage}`);
+            return;
+        }
+    
+        const messageType = message.message.conversation 
+            ? 'text' 
+            : message.message.imageMessage
+                ? 'image' 
+                : message.message.videoMessage
+                    ? 'video'
+                    : null;
+        console.log('Message type:', messageType);
+    
+        const isDocument = messageType === 'document';
+        const isVideo = messageType === 'video';
+        const isImage = messageType === 'image';
+        const isSticker = messageType === 'sticker';
+        const hasQuotedMessage = 'quotedMessage' in message.message;
+    
+        console.log(`Properties of the message, isDocument: ${isDocument}, isVideo: ${isVideo}, isImage: ${isImage}, isSticker: ${isSticker}, hasQuotedMessage: ${hasQuotedMessage}`);
+    
+        // Create the messageObject
+        const messageObject = {
+            isDocument,
+            isVideo,
+            isImage,
+            isSticker,
+            hasQuotedMessage,
+            messageType,
+            sender,
+            groupNumber,
+            senderName,
+            isFromMe,
+            isPremiumUser,
+            isAdmin,
+            commandPrefix,
+            textMessage,
+            botEmoji,
+        };
+    
+        const [name, ...args] = textMessage.split(' ');
+    
+        try {
+            const commandSet = isAdmin ? commands.owner : isPremiumUser ? commands.premium : commands.general;
+            const commandName = name.substring(1).toLowerCase();
+    
+            if (commandSet[commandName]) {
+                await commandSet[commandName].handler(sock, message, messageObject, args);
+            } else {
+                throw new Error(`Unrecognized textMessage: ${commandName}`);
+            }
+        } catch (error) {
+            console.error('Error processing message:', error);
+        }
     });
 
     sock.ev.on('connection.update', (update) => {
-      const { connection, lastDisconnect } = update;
-      if(connection === 'close') {
-        const shouldReconnect = lastDisconnect.error instanceof Boom && lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut;
-        console.log('connection closed due to ', lastDisconnect.error, ', reconnecting ', shouldReconnect);
-        if(shouldReconnect) {
-          start();
+        const { connection, lastDisconnect } = update;
+        if(connection === 'close') {
+            const shouldReconnect = lastDisconnect.error instanceof Boom && lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut;
+            console.log('connection closed due to ', lastDisconnect.error, ', reconnecting ', shouldReconnect);
+            if(shouldReconnect) {
+                start();
+            }
+        } else if(connection === 'open') {
+            console.log('opened connection');
         }
-      } else if(connection === 'open') {
-        console.log('opened connection');
-      }
     });
 
     const store = makeInMemoryStore({});

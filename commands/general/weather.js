@@ -10,4 +10,4 @@ async function getWeather(location) {
     return `Actualmente son ${data.current.temperature} grados en ${location} y ${data.current.weather_descriptions[0]}`;
 }
 
-module.exports = getWeather;
+module.exports = { getWeather };
