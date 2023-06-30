@@ -30,7 +30,7 @@ async function getAccessToken() {
 }
 
 async function searchTrack(trackName, token) {
-  const response = await axios.get(`https://api.spotify.com/v1/search?q=${encodeURIComponent(trackName)}&type=track&limit=5`, {
+  const response = await axios.get(`https://api.spotify.com/v1/search?q=${encodeURIComponent(trackName)}&type=track&limit=5&market=PE`, {
       headers: {
           'Authorization': `Bearer ${token}`
       }
@@ -38,6 +38,8 @@ async function searchTrack(trackName, token) {
 
   let previewUrl = null;
   let trackFoundName = null;
+  let artistFoundName = null;
+
   for (let item of response.data.tracks.items) {
       if (item.preview_url) {
           previewUrl = item.preview_url;
