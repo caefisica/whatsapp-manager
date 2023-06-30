@@ -10,7 +10,7 @@ const {
 
 require('dotenv').config();
 const pino = require('pino');
-const { dropAuth } = require('./utils/reload')
+const { dropAuth } = require('./utils/reload');
 
 const generalCommandPrefix = '!';
 const premiumCommandPrefix = '#';
@@ -70,12 +70,8 @@ async function start() {
             commandPrefix = generalCommandPrefix;
         }
     
-        const textMessage = message.message.conversation 
-                      || message.message.extendedTextMessage?.text
-                      || message.message.imageMessage?.caption 
-                      || message.message.videoMessage?.caption 
-                      || '';
-    
+        const textMessage = message.message.conversation || message.message.extendedTextMessage?.text || message.message.imageMessage?.caption || message.message.videoMessage?.caption || '';
+
         if (!textMessage.startsWith(commandPrefix)) {
             return;
         }
@@ -148,12 +144,12 @@ async function start() {
             console.log('connection closed due to ', lastDisconnect.error, ', reconnecting ', shouldReconnect);
     
             if(shouldReconnect) {
-                console.log("Reconnecting in 5 sec to try to restore the connection...")
+                console.log('Reconnecting in 5 sec to try to restore the connection...');
                 setTimeout(() => {
                     start();
                 }, 5000);
             } else {
-                console.log("You have been logged out. Restarting in 5 sec to scan new QR code...");
+                console.log('You have been logged out. Restarting in 5 sec to scan new QR code...');
                 await dropAuth();
                 setTimeout(() => {
                     start();
