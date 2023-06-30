@@ -1,6 +1,6 @@
 const axios = require('axios');
 const queryString = require('query-string');
-require('dotenv').config({ path: '../../.env' })
+require('dotenv').config({ path: '../../.env' });
 
 const client_id = process.env.SPOTIFY_CLIENT_ID;
 const client_secret = process.env.SPOTIFY_CLIENT_SECRET;
@@ -30,26 +30,26 @@ async function getAccessToken() {
 }
 
 async function searchTrack(trackName, token) {
-  const response = await axios.get(`https://api.spotify.com/v1/search?q=${encodeURIComponent(trackName)}&type=track&limit=5&market=PE`, {
-      headers: {
-          'Authorization': `Bearer ${token}`
-      }
-  });
+    const response = await axios.get(`https://api.spotify.com/v1/search?q=${encodeURIComponent(trackName)}&type=track&limit=5&market=PE`, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
 
-  let previewUrl = null;
-  let trackFoundName = null;
-  let artistFoundName = null;
+    let previewUrl = null;
+    let trackFoundName = null;
+    let artistFoundName = null;
 
-  for (let item of response.data.tracks.items) {
-      if (item.preview_url) {
-          previewUrl = item.preview_url;
-          trackFoundName = item.name;
-          artistFoundName = item.artists[0].name;
-          break;
-      }
-  }
+    for (let item of response.data.tracks.items) {
+        if (item.preview_url) {
+            previewUrl = item.preview_url;
+            trackFoundName = item.name;
+            artistFoundName = item.artists[0].name;
+            break;
+        }
+    }
 
-  return { previewUrl, trackFoundName, artistFoundName };
+    return { previewUrl, trackFoundName, artistFoundName };
 }
 
 module.exports = {

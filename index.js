@@ -77,7 +77,6 @@ async function start() {
                       || '';
     
         if (!textMessage.startsWith(commandPrefix)) {
-            console.log(`Message is not a command. Expected prefix: ${commandPrefix}, received message: ${textMessage}`);
             return;
         }
     
@@ -88,8 +87,8 @@ async function start() {
                 : message.message.videoMessage
                     ? 'video'
                     : message.message.extendedTextMessage
-                      ? 'text'
-                      : null;
+                        ? 'text'
+                        : null;
 
         const isDocument = messageType === 'document';
         const isVideo = messageType === 'video';
