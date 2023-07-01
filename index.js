@@ -5,7 +5,7 @@ const {
     fetchLatestBaileysVersion,
     makeCacheableSignalKeyStore,
     isJidBroadcast,
-    DisconnectReason                  // MessageType, MessageOptions, Mimetype
+    DisconnectReason,
 } = require('@adiwajshing/baileys');
 
 require('dotenv').config();
@@ -27,7 +27,7 @@ const adminUsers = [`${OWNER_ID}@s.whatsapp.net`];
 async function start() {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
     const { version, isLatest } = await fetchLatestBaileysVersion();
-    console.log(`Using WA v${version.join('.')}, isLatest: ${isLatest}`);
+    console.log(`Usando WA v${version.join('.')}. ¿Es la última versión? ${isLatest}`);
 
     let silentLogs = pino({ level: 'silent' }); // change to 'debug' to see what kind of stuff the lib is doing
 
@@ -47,14 +47,14 @@ async function start() {
 
     sock.ev.on('messages.upsert', async ({ messages }) => {
         const message = messages[0];
-        const sender = message.key.remoteJid;
+        const sender = message.key.remoteJid; // sent from this number (can be a group or person)
         const senderNumber = messages[0].key.participant;
-    
-        // Check whether the message is from a group first
-        if (!sender.endsWith('@g.us')) {
+        const isGroup = sender.endsWith('@g.us');
+
+        if (!isGroup) {
             return;
         }
-    
+
         const isFromMe = message.key.fromMe;
         const senderName = message.pushName;
         const groupNumber = message.key.remoteJid;
@@ -69,27 +69,34 @@ async function start() {
         } else {
             commandPrefix = generalCommandPrefix;
         }
-    
-        const textMessage = message.message && (
-            message.message.conversation ||
-            message.message.extendedTextMessage?.text ||
-            message.message.imageMessage?.caption ||
-            message.message.videoMessage?.caption
-        ) || '';
+
+        let textMessage = '';
+        let messageType = '';
+        if(message.message) {
+            if(message.message.conversation) {
+                textMessage = message.message.conversation;
+                messageType = 'text';
+            } else if(message.message.extendedTextMessage) {
+                textMessage = message.message.extendedTextMessage.text;
+                messageType = 'text';
+            } else if(message.message.imageMessage) {
+                textMessage = message.message.imageMessage.caption;
+                messageType = 'image';
+            } else if(message.message.videoMessage) {
+                textMessage = message.message.videoMessage.caption;
+                messageType = 'video';
+            } else if(message.message.audioMessage) {
+                textMessage = 'audio message';
+                messageType = 'audio';
+            } else if(message.message.stickerMessage) {
+                textMessage = 'sticker message';
+                messageType = 'sticker';
+            }
+        }
 
         if (!textMessage.startsWith(commandPrefix)) {
             return;
         }
-    
-        const messageType = message.message.conversation 
-            ? 'text' 
-            : message.message.imageMessage
-                ? 'image' 
-                : message.message.videoMessage
-                    ? 'video'
-                    : message.message.extendedTextMessage
-                        ? 'text'
-                        : null;
 
         const isDocument = messageType === 'document';
         const isVideo = messageType === 'video';
@@ -116,7 +123,7 @@ async function start() {
             textMessage,
             botEmoji,
         };
-    
+
         const [name, ...args] = textMessage.split(' ');
     
         try {
@@ -124,8 +131,10 @@ async function start() {
             const commandName = name.substring(1).toLowerCase();
     
             if (commandSet[commandName]) {
+                console.log(`Processed command: ${commandName} from ${senderName} (${senderNumber})`);
                 await commandSet[commandName].handler(sock, message, messageObject, args);
 
+                // React to the message after the command has been processed
                 const reactionMessage = {
                     react: {
                         text: completeEmoji,
@@ -146,15 +155,15 @@ async function start() {
     
         if(connection === 'close') {
             const shouldReconnect = lastDisconnect.error && lastDisconnect.error.output && lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut;
-            console.log('connection closed due to ', lastDisconnect.error, ', reconnecting ', shouldReconnect);
+            console.log('La sesión fue cerrada debido a que', lastDisconnect.error, '. Reconectando:', shouldReconnect);
     
             if(shouldReconnect) {
-                console.log('Reconnecting in 5 sec to try to restore the connection...');
+                console.log('Reconectando en 5 segundos...');
                 setTimeout(() => {
                     start();
                 }, 5000);
             } else {
-                console.log('You have been logged out. Restarting in 5 sec to scan new QR code...');
+                console.log('Parece que la sesión ya no está autorizada. Eliminando credenciales y reconectando en 5 segundos...');
                 await dropAuth();
                 setTimeout(() => {
                     start();
@@ -162,7 +171,7 @@ async function start() {
             }
     
         } else if(connection === 'open') {
-            console.log('opened connection');
+            console.log('Establecida conexión con WhatsApp. El bot está listo para procesar mensajes.');
         }
     });
 
@@ -170,25 +179,25 @@ async function start() {
     try {
         await store.readFromFile('./baileys_store.json');
     } catch (error) {
-        console.error('Error reading from file:', error);
+        console.error('Error al leer el archivo:', error);
     }
 
     setInterval(() => {
         try {
             store.writeToFile('./baileys_store.json');
         } catch (error) {
-            console.error('Error writing to file:', error);
+            console.error('Error al escribir en el archivo:', error);
         }
     }, 10_000);
 
     store.bind(sock.ev);
 
     sock.ev.on('chats.set', () => {
-        console.log('got chats', store.chats.all());
+        console.log('Obtuvimos los chats:', store.chats.all());
     });
 
     sock.ev.on('contacts.set', () => {
-        console.log('got contacts', Object.values(store.contacts));
+        console.log('Obtuvimos los contactos:', Object.values(store.contacts));
     });
 
     sock.ev.on('connection.update', update => {
