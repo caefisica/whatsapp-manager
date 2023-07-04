@@ -20,9 +20,13 @@ const completeEmoji = '✅';
 
 const commands = require('./commands');
 
-const { OWNER_ID } = process.env;
-const premiumUsers = [`${OWNER_ID}@s.whatsapp.net`];
-const adminUsers = [`${OWNER_ID}@s.whatsapp.net`];
+const myNumber = process.env.OWNER_ID;
+const myNumberWithJid = myNumber + "@s.whatsapp.net";
+const premiumUsers = [`${myNumber}@s.whatsapp.net`];
+const adminUsers = [`${myNumber}@s.whatsapp.net`];
+
+// Statistics
+let startCount = 1;
 
 async function start() {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
@@ -55,6 +59,11 @@ async function start() {
         // This also ignores reactions
         if (!isGroup) {
             return;
+        }
+
+        // Sometimes sender key is missing, which causes the bot to crash
+        if (!msg.message) {
+          return;
         }
 
         const isFromMe = msg.key.fromMe;
@@ -173,27 +182,34 @@ async function start() {
     });
 
     sock.ev.on('connection.update', async (update) => {
-        const { connection, lastDisconnect } = update;
-    
-        if(connection === 'close') {
-            const shouldReconnect = lastDisconnect.error && lastDisconnect.error.output && lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut;
-            console.log('La sesión fue cerrada debido a que', lastDisconnect.error, '. Reconectando:', shouldReconnect);
-    
-            if(shouldReconnect) {
-                console.log('Reconectando en 5 segundos...');
-                setTimeout(() => {
-                    start();
-                }, 5000);
-            } else {
-                console.log('Parece que la sesión ya no está autorizada. Eliminando credenciales y reconectando en 5 segundos...');
-                await dropAuth();
-                setTimeout(() => {
-                    start();
-                }, 5000);
+        try {
+            const { connection, lastDisconnect } = update;
+        
+            if(connection === 'open') {
+                console.log('[LOG] El bot se ha iniciado correctamente');
+                await sock.sendMessage(myNumberWithJid, {
+                    text: `[INICIO] - ${startCount}`,
+                });
+            } else if(connection === 'close') {
+                const shouldReconnect = lastDisconnect.error && lastDisconnect.error.output && lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut;
+                
+                if(shouldReconnect) {
+                    console.log("[ALERTA] La conexión fuera CERRADA por", lastDisconnect.error, ". Reconectando en 15 segundos...");
+                    setTimeout(() => {
+                        start();
+                    }, 1000 * 15);
+                } else {
+                    console.log("[PROBLEMA]: Estás fuera de línea. Prepárate para escanear el código QR de nuevo");
+                    await dropAuth();
+                    setTimeout(() => {
+                        start();
+                    }, 1000 * 5);
+                }
             }
     
-        } else if(connection === 'open') {
-            console.log('Establecida conexión con WhatsApp. El bot está listo para procesar mensajes.');
+            console.log("[LOG] Actualización de conexión:", update);
+        } catch (err) {
+            await console.log(false, "connection.update", err, update);
         }
     });
 
@@ -220,12 +236,6 @@ async function start() {
 
     sock.ev.on('contacts.set', () => {
         console.log('Obtuvimos los contactos:', Object.values(store.contacts));
-    });
-
-    sock.ev.on('connection.update', update => {
-        if (update.qr) {
-            console.log('Escanea este QR con tu teléfono: ' + update.qr);
-        }
     });
 
 }
