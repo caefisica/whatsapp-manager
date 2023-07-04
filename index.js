@@ -45,22 +45,23 @@ async function start() {
 
     sock.ev.on('creds.update', saveCreds);
 
-    sock.ev.on('messages.upsert', async ({ messages }) => {
-        const message = messages[0];
-        const sender = message.key.remoteJid; // sent from this number (can be a group or person)
-        const senderNumber = messages[0].key.participant;
-        const isGroup = sender.endsWith('@g.us');
+    sock.ev.on('messages.upsert', async (m) => {
+        const msg = JSON.parse(JSON.stringify(m)).messages[0];
 
+        const groupNumber = msg.key.remoteJid; // sent from this number (can be a group or person)
+        const senderNumber = msg.key.participant;
+        const isGroup = groupNumber.endsWith('@g.us');
+
+        // This also ignores reactions
         if (!isGroup) {
             return;
         }
 
-        const isFromMe = message.key.fromMe;
-        const senderName = message.pushName;
-        const groupNumber = message.key.remoteJid;
-        const isPremiumUser = premiumUsers.includes(sender);
-        const isAdmin = adminUsers.includes(sender);
-    
+        const isFromMe = msg.key.fromMe;
+        const senderName = msg.pushName;
+        const isPremiumUser = premiumUsers.includes(senderNumber);
+        const isAdmin = adminUsers.includes(senderNumber);
+
         let commandPrefix;
         if (isAdmin) {
             commandPrefix = ownerCommandPrefix; 
@@ -70,49 +71,71 @@ async function start() {
             commandPrefix = generalCommandPrefix;
         }
 
-        let textMessage = '';
-        let messageType = '';
-        if(message.message) {
-            if(message.message.conversation) {
-                textMessage = message.message.conversation;
-                messageType = 'text';
-            } else if(message.message.extendedTextMessage) {
-                textMessage = message.message.extendedTextMessage.text;
-                messageType = 'text';
-            } else if(message.message.imageMessage) {
-                textMessage = message.message.imageMessage.caption;
-                messageType = 'image';
-            } else if(message.message.videoMessage) {
-                textMessage = message.message.videoMessage.caption;
-                messageType = 'video';
-            } else if(message.message.audioMessage) {
-                textMessage = 'audio message';
-                messageType = 'audio';
-            } else if(message.message.stickerMessage) {
-                textMessage = 'sticker message';
-                messageType = 'sticker';
-            }
+        const type = msg.message.conversation
+            ? 'textMessage'
+            : msg.message.reactionMessage
+                ? 'reactionMessage'
+                : msg.message.imageMessage
+                    ? 'imageMessage'
+                    : msg.message.videoMessage
+                        ? 'videoMessage'
+                        : msg.message.stickerMessage
+                            ? 'stickerMessage'
+                            : msg.message.documentMessage
+                                ? 'documentMessage'
+                                : msg.message.documentWithCaptionMessage
+                                    ? 'documentWithCaptionMessage'
+                                    : msg.message.audioMessage
+                                        ? 'audioMessage'
+                                        : msg.message.ephemeralMessage
+                                            ? 'ephemeralMessage'
+                                            : msg.message.extendedTextMessage
+                                                ? 'extendedTextMessage'
+                                                : msg.message.viewOnceMessageV2
+                                                    ? 'viewOnceMessageV2'
+                                                    : 'other';
+        //ephemeralMessage are from disappearing chat
+
+        const acceptedType = [
+            'textMessage',
+            'imageMessage',
+            'videoMessage',
+            'stickerMessage',
+            'documentWithCaptionMessage',
+            'extendedTextMessage',
+        ];
+        if (!acceptedType.includes(type)) {
+            return;
         }
+
+        // Extract body of the message
+        let textMessage =
+          type === 'textMessage'
+              ? msg.message.conversation
+              : type === 'reactionMessage' && msg.message.reactionMessage.text
+                  ? msg.message.reactionMessage.text
+                  : type == 'imageMessage' && msg.message.imageMessage.caption
+                      ? msg.message.imageMessage.caption
+                      : type == 'videoMessage' && msg.message.videoMessage.caption
+                          ? msg.message.videoMessage.caption
+                          : type == 'documentWithCaptionMessage' && msg.message.documentWithCaptionMessage.message.documentMessage.caption
+                              ? msg.message.documentWithCaptionMessage.message.documentMessage.caption
+                              : type == 'extendedTextMessage' &&
+              msg.message.extendedTextMessage.text
+                                  ? msg.message.extendedTextMessage.text
+                                  : '';
+        textMessage = textMessage.replace(/\n|\r/g, ''); //remove all \n and \r
 
         if (!textMessage.startsWith(commandPrefix)) {
             return;
         }
 
-        const isDocument = messageType === 'document';
-        const isVideo = messageType === 'video';
-        const isImage = messageType === 'image';
-        const isSticker = messageType === 'sticker';
-        const hasQuotedMessage = 'quotedMessage' in message.message;
-
-        // Create the messageObject to pass to the command handler
         const messageObject = {
-            isDocument,
-            isVideo,
-            isImage,
-            isSticker,
-            hasQuotedMessage,
-            messageType,
-            sender,
+            isDocument: type === 'documentWithCaptionMessage',
+            isVideo: type === 'videoMessage',
+            isImage: type === 'imageMessage',
+            isSticker: type === 'stickerMessage',
+            messageType: type,
             groupNumber,
             senderName,
             senderNumber,
@@ -125,23 +148,22 @@ async function start() {
         };
 
         const [name, ...args] = textMessage.split(' ');
-    
+
         try {
             const commandSet = isAdmin ? commands.owner : isPremiumUser ? commands.premium : commands.general;
             const commandName = name.substring(1).toLowerCase();
-    
+
             if (commandSet[commandName]) {
-                console.log(`Processed command: ${commandName} from ${senderName} (${senderNumber})`);
-                await commandSet[commandName].handler(sock, message, messageObject, args);
+                await commandSet[commandName].handler(sock, msg, messageObject, args);
 
                 // React to the message after the command has been processed
                 const reactionMessage = {
                     react: {
                         text: completeEmoji,
-                        key: message.key
+                        key: msg.key
                     }
                 };
-                await sock.sendMessage(sender, reactionMessage);
+                await sock.sendMessage(senderNumber, reactionMessage);
             } else {
                 throw new Error(`Unrecognized textMessage: ${commandName}`);
             }
