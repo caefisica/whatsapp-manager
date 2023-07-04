@@ -5,7 +5,7 @@ const {
     fetchLatestBaileysVersion,
     makeCacheableSignalKeyStore,
     isJidBroadcast,
-    DisconnectReason                  // MessageType, MessageOptions, Mimetype
+    DisconnectReason,
 } = require('@adiwajshing/baileys');
 
 require('dotenv').config();
@@ -27,7 +27,7 @@ const adminUsers = [`${OWNER_ID}@s.whatsapp.net`];
 async function start() {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
     const { version, isLatest } = await fetchLatestBaileysVersion();
-    console.log(`Using WA v${version.join('.')}, isLatest: ${isLatest}`);
+    console.log(`Usando WA v${version.join('.')}. ¿Es la última versión? ${isLatest}`);
 
     let silentLogs = pino({ level: 'silent' }); // change to 'debug' to see what kind of stuff the lib is doing
 
@@ -45,22 +45,23 @@ async function start() {
 
     sock.ev.on('creds.update', saveCreds);
 
-    sock.ev.on('messages.upsert', async ({ messages }) => {
-        const message = messages[0];
-        const sender = message.key.remoteJid;
-        const senderNumber = messages[0].key.participant;
-    
-        // Check whether the message is from a group first
-        if (!sender.endsWith('@g.us')) {
+    sock.ev.on('messages.upsert', async (m) => {
+        const msg = JSON.parse(JSON.stringify(m)).messages[0];
+
+        const groupNumber = msg.key.remoteJid; // sent from this number (can be a group or person)
+        const senderNumber = msg.key.participant;
+        const isGroup = groupNumber.endsWith('@g.us');
+
+        // This also ignores reactions
+        if (!isGroup) {
             return;
         }
-    
-        const isFromMe = message.key.fromMe;
-        const senderName = message.pushName;
-        const groupNumber = message.key.remoteJid;
-        const isPremiumUser = premiumUsers.includes(sender);
-        const isAdmin = adminUsers.includes(sender);
-    
+
+        const isFromMe = msg.key.fromMe;
+        const senderName = msg.pushName;
+        const isPremiumUser = premiumUsers.includes(senderNumber);
+        const isAdmin = adminUsers.includes(senderNumber);
+
         let commandPrefix;
         if (isAdmin) {
             commandPrefix = ownerCommandPrefix; 
@@ -69,43 +70,72 @@ async function start() {
         } else {
             commandPrefix = generalCommandPrefix;
         }
-    
-        const textMessage = message.message && (
-            message.message.conversation ||
-            message.message.extendedTextMessage?.text ||
-            message.message.imageMessage?.caption ||
-            message.message.videoMessage?.caption
-        ) || '';
+
+        const type = msg.message.conversation
+            ? 'textMessage'
+            : msg.message.reactionMessage
+                ? 'reactionMessage'
+                : msg.message.imageMessage
+                    ? 'imageMessage'
+                    : msg.message.videoMessage
+                        ? 'videoMessage'
+                        : msg.message.stickerMessage
+                            ? 'stickerMessage'
+                            : msg.message.documentMessage
+                                ? 'documentMessage'
+                                : msg.message.documentWithCaptionMessage
+                                    ? 'documentWithCaptionMessage'
+                                    : msg.message.audioMessage
+                                        ? 'audioMessage'
+                                        : msg.message.ephemeralMessage
+                                            ? 'ephemeralMessage'
+                                            : msg.message.extendedTextMessage
+                                                ? 'extendedTextMessage'
+                                                : msg.message.viewOnceMessageV2
+                                                    ? 'viewOnceMessageV2'
+                                                    : 'other';
+        //ephemeralMessage are from disappearing chat
+
+        const acceptedType = [
+            'textMessage',
+            'imageMessage',
+            'videoMessage',
+            'stickerMessage',
+            'documentWithCaptionMessage',
+            'extendedTextMessage',
+        ];
+        if (!acceptedType.includes(type)) {
+            return;
+        }
+
+        // Extract body of the message
+        let textMessage =
+          type === 'textMessage'
+              ? msg.message.conversation
+              : type === 'reactionMessage' && msg.message.reactionMessage.text
+                  ? msg.message.reactionMessage.text
+                  : type == 'imageMessage' && msg.message.imageMessage.caption
+                      ? msg.message.imageMessage.caption
+                      : type == 'videoMessage' && msg.message.videoMessage.caption
+                          ? msg.message.videoMessage.caption
+                          : type == 'documentWithCaptionMessage' && msg.message.documentWithCaptionMessage.message.documentMessage.caption
+                              ? msg.message.documentWithCaptionMessage.message.documentMessage.caption
+                              : type == 'extendedTextMessage' &&
+              msg.message.extendedTextMessage.text
+                                  ? msg.message.extendedTextMessage.text
+                                  : '';
+        textMessage = textMessage.replace(/\n|\r/g, ''); //remove all \n and \r
 
         if (!textMessage.startsWith(commandPrefix)) {
             return;
         }
-    
-        const messageType = message.message.conversation 
-            ? 'text' 
-            : message.message.imageMessage
-                ? 'image' 
-                : message.message.videoMessage
-                    ? 'video'
-                    : message.message.extendedTextMessage
-                        ? 'text'
-                        : null;
 
-        const isDocument = messageType === 'document';
-        const isVideo = messageType === 'video';
-        const isImage = messageType === 'image';
-        const isSticker = messageType === 'sticker';
-        const hasQuotedMessage = 'quotedMessage' in message.message;
-
-        // Create the messageObject to pass to the command handler
         const messageObject = {
-            isDocument,
-            isVideo,
-            isImage,
-            isSticker,
-            hasQuotedMessage,
-            messageType,
-            sender,
+            isDocument: type === 'documentWithCaptionMessage',
+            isVideo: type === 'videoMessage',
+            isImage: type === 'imageMessage',
+            isSticker: type === 'stickerMessage',
+            messageType: type,
             groupNumber,
             senderName,
             senderNumber,
@@ -116,23 +146,24 @@ async function start() {
             textMessage,
             botEmoji,
         };
-    
+
         const [name, ...args] = textMessage.split(' ');
-    
+
         try {
             const commandSet = isAdmin ? commands.owner : isPremiumUser ? commands.premium : commands.general;
             const commandName = name.substring(1).toLowerCase();
-    
-            if (commandSet[commandName]) {
-                await commandSet[commandName].handler(sock, message, messageObject, args);
 
+            if (commandSet[commandName]) {
+                await commandSet[commandName].handler(sock, msg, messageObject, args);
+
+                // React to the message after the command has been processed
                 const reactionMessage = {
                     react: {
                         text: completeEmoji,
-                        key: message.key
+                        key: msg.key
                     }
                 };
-                await sock.sendMessage(sender, reactionMessage);
+                await sock.sendMessage(senderNumber, reactionMessage);
             } else {
                 throw new Error(`Unrecognized textMessage: ${commandName}`);
             }
@@ -146,15 +177,15 @@ async function start() {
     
         if(connection === 'close') {
             const shouldReconnect = lastDisconnect.error && lastDisconnect.error.output && lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut;
-            console.log('connection closed due to ', lastDisconnect.error, ', reconnecting ', shouldReconnect);
+            console.log('La sesión fue cerrada debido a que', lastDisconnect.error, '. Reconectando:', shouldReconnect);
     
             if(shouldReconnect) {
-                console.log('Reconnecting in 5 sec to try to restore the connection...');
+                console.log('Reconectando en 5 segundos...');
                 setTimeout(() => {
                     start();
                 }, 5000);
             } else {
-                console.log('You have been logged out. Restarting in 5 sec to scan new QR code...');
+                console.log('Parece que la sesión ya no está autorizada. Eliminando credenciales y reconectando en 5 segundos...');
                 await dropAuth();
                 setTimeout(() => {
                     start();
@@ -162,7 +193,7 @@ async function start() {
             }
     
         } else if(connection === 'open') {
-            console.log('opened connection');
+            console.log('Establecida conexión con WhatsApp. El bot está listo para procesar mensajes.');
         }
     });
 
@@ -170,25 +201,25 @@ async function start() {
     try {
         await store.readFromFile('./baileys_store.json');
     } catch (error) {
-        console.error('Error reading from file:', error);
+        console.error('Error al leer el archivo:', error);
     }
 
     setInterval(() => {
         try {
             store.writeToFile('./baileys_store.json');
         } catch (error) {
-            console.error('Error writing to file:', error);
+            console.error('Error al escribir en el archivo:', error);
         }
     }, 10_000);
 
     store.bind(sock.ev);
 
     sock.ev.on('chats.set', () => {
-        console.log('got chats', store.chats.all());
+        console.log('Obtuvimos los chats:', store.chats.all());
     });
 
     sock.ev.on('contacts.set', () => {
-        console.log('got contacts', Object.values(store.contacts));
+        console.log('Obtuvimos los contactos:', Object.values(store.contacts));
     });
 
     sock.ev.on('connection.update', update => {
