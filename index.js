@@ -11,6 +11,7 @@ const {
 require('dotenv').config();
 const pino = require('pino');
 const { dropAuth } = require('./utils/reload');
+const { insertMessage } = require('./db');
 
 const generalCommandPrefix = '!';
 const premiumCommandPrefix = '#';
@@ -178,6 +179,14 @@ async function start() {
             }
         } catch (error) {
             console.error('Error processing message:', error);
+
+            // Send error message to database
+            const timestamp = new Date();
+            await insertMessage(
+                JSON.stringify(messageObject),
+                senderNumber,
+                timestamp
+            );
         }
     });
 
@@ -212,23 +221,6 @@ async function start() {
             await console.log(false, "connection.update", err, update);
         }
     });
-
-    const store = makeInMemoryStore({});
-    try {
-        await store.readFromFile('./baileys_store.json');
-    } catch (error) {
-        console.error('Error al leer el archivo:', error);
-    }
-
-    setInterval(() => {
-        try {
-            store.writeToFile('./baileys_store.json');
-        } catch (error) {
-            console.error('Error al escribir en el archivo:', error);
-        }
-    }, 10_000);
-
-    store.bind(sock.ev);
 
     sock.ev.on('chats.set', () => {
         console.log('Obtuvimos los chats:', store.chats.all());
