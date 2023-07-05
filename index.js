@@ -11,26 +11,35 @@ require('dotenv').config();
 const pino = require('pino');
 const { dropAuth } = require('./utils/reload');
 const { insertMessage } = require('./db');
+const commands = require('./commands');
 
+// Constants
 const generalCommandPrefix = '!';
 const premiumCommandPrefix = '#';
 const ownerCommandPrefix = '@';
-const botEmoji = '🤖';
+const botEmoji = '👷‍♂️';
 const completeEmoji = '✅';
-
-const commands = require('./commands');
-
 const myNumber = process.env.OWNER_ID;
 const myNumberWithJid = myNumber + '@s.whatsapp.net';
 const premiumUsers = [`${myNumber}@s.whatsapp.net`];
 const adminUsers = [`${myNumber}@s.whatsapp.net`];
+const MAX_RETRIES = 5;
 
 // Statistics
 let startCount = 1;
 
 // Restart behavior
 let retryCount = 0;
-const MAX_RETRIES = 5;
+
+// Accepted message types
+const acceptedTypes = new Set([
+    'textMessage',
+    'imageMessage',
+    'videoMessage',
+    'stickerMessage',
+    'documentWithCaptionMessage',
+    'extendedTextMessage',
+]);
 
 async function start() {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
@@ -51,22 +60,30 @@ async function start() {
         shouldIgnoreJid: (jid) => isJidBroadcast(jid),
     });
 
-    sock.ev.on('creds.update', saveCreds);
+    sock.ev.on('creds.update', async () => {
+        try {
+            await saveCreds();
+        } catch (error) {
+            console.error('Error saving credentials:', error);
+        }
+    });
 
-    sock.ev.on('messages.upsert', async (m) => {
+    sock.ev.on('messages.upsert', handleMessageUpsert(sock));
+
+    sock.ev.on('connection.update', handleConnectionUpdate(sock));
+
+    startCount++;
+}
+
+function handleMessageUpsert(sock) {
+    return async (m) => {
         const msg = JSON.parse(JSON.stringify(m)).messages[0];
 
-        const groupNumber = msg.key.remoteJid; // sent from this number (can be a group or person)
+        const groupNumber = msg.key.remoteJid;
         const senderNumber = msg.key.participant;
         const isGroup = groupNumber.endsWith('@g.us');
 
-        // This also ignores reactions
-        if (!isGroup) {
-            return;
-        }
-
-        // Sometimes sender key is missing, which causes the bot to crash
-        if (!msg.message) {
+        if (!isGroup || !msg.message) {
             return;
         }
 
@@ -84,60 +101,16 @@ async function start() {
             commandPrefix = generalCommandPrefix;
         }
 
-        const type = msg.message.conversation
-            ? 'textMessage'
-            : msg.message.reactionMessage
-                ? 'reactionMessage'
-                : msg.message.imageMessage
-                    ? 'imageMessage'
-                    : msg.message.videoMessage
-                        ? 'videoMessage'
-                        : msg.message.stickerMessage
-                            ? 'stickerMessage'
-                            : msg.message.documentMessage
-                                ? 'documentMessage'
-                                : msg.message.documentWithCaptionMessage
-                                    ? 'documentWithCaptionMessage'
-                                    : msg.message.audioMessage
-                                        ? 'audioMessage'
-                                        : msg.message.ephemeralMessage
-                                            ? 'ephemeralMessage'
-                                            : msg.message.extendedTextMessage
-                                                ? 'extendedTextMessage'
-                                                : msg.message.viewOnceMessageV2
-                                                    ? 'viewOnceMessageV2'
-                                                    : 'other';
-        //ephemeralMessage are from disappearing chat
-
-        const acceptedType = [
-            'textMessage',
-            'imageMessage',
-            'videoMessage',
-            'stickerMessage',
-            'documentWithCaptionMessage',
-            'extendedTextMessage',
-        ];
-        if (!acceptedType.includes(type)) {
+        const type = Object.keys(msg.message)[0];
+        if (!acceptedTypes.has(type)) {
             return;
         }
 
-        // Extract body of the message
-        let textMessage =
-          type === 'textMessage'
-              ? msg.message.conversation
-              : type === 'reactionMessage' && msg.message.reactionMessage.text
-                  ? msg.message.reactionMessage.text
-                  : type == 'imageMessage' && msg.message.imageMessage.caption
-                      ? msg.message.imageMessage.caption
-                      : type == 'videoMessage' && msg.message.videoMessage.caption
-                          ? msg.message.videoMessage.caption
-                          : type == 'documentWithCaptionMessage' && msg.message.documentWithCaptionMessage.message.documentMessage.caption
-                              ? msg.message.documentWithCaptionMessage.message.documentMessage.caption
-                              : type == 'extendedTextMessage' &&
-              msg.message.extendedTextMessage.text
-                                  ? msg.message.extendedTextMessage.text
-                                  : '';
+        let textMessage = msg.message[type]?.caption || msg.message[type]?.text || '';
         textMessage = textMessage.replace(/\n|\r/g, ''); //remove all \n and \r
+
+        console.log('type:', type);
+        console.log('textMessage:', textMessage);
 
         if (!textMessage.startsWith(commandPrefix)) {
             return;
@@ -191,9 +164,11 @@ async function start() {
                 timestamp
             );
         }
-    });
+    };
+}
 
-    sock.ev.on('connection.update', async (update) => {
+function handleConnectionUpdate(sock) {
+    return async (update) => {
         const { connection, lastDisconnect } = update;
         const isStatusCodeLogout = lastDisconnect.error?.output?.statusCode === DisconnectReason.loggedOut;
         const shouldReconnect = lastDisconnect.error && !isStatusCodeLogout;
@@ -231,7 +206,7 @@ async function start() {
         } catch (error) {
             console.error('Error en connection.update', error, update);
         }
-    });
+    };
 }
 
 start().catch(console.error);
