@@ -27,7 +27,7 @@ const {
     premiumUsers,
     adminUsers,
     MAX_RETRIES
-} = require('./config');
+} = require('./config/constants');
 
 // Statistics
 let startCount = 1;
