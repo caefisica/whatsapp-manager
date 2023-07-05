@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "nodemon .\\index.js",
     "start": "node index.js",
+    "start:prod": "pm2 start index.js --name SumiBot",
     "clean:packages": "shx rm -rf node_modules package-lock.json",
     "clean:session": "shx rm -rf auth_info_baileys baileys_store.json",
     "lint": "eslint . --ext .js commands/",
@@ -52,6 +53,7 @@
     "delay": 2500
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.26.0",
     "@vitalets/google-translate-api": "^9.2.0"
   }
 }
