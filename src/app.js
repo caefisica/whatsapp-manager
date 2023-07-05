@@ -6,8 +6,6 @@ const {
     isJidBroadcast,
 } = require('@adiwajshing/baileys');
 
-require('dotenv').config({ path: __dirname + '../.env'});
-
 const pino = require('pino');
 const { handleMessageUpsert } = require('./handlers/messageHandler');
 const { handleConnectionUpdate } = require('./handlers/connectionHandler');
