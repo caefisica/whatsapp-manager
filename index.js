@@ -214,11 +214,11 @@ async function processCommand(sock, msg, messageObject) {
 
 function getCommandSet(messageObject) {
     if (messageObject.isAdmin) {
-        return commands.owner;
+        return {...commands.general, ...commands.premium, ...commands.owner};
     }
 
     if (messageObject.isPremiumUser) {
-        return commands.premium;
+        return {...commands.general, ...commands.premium};
     }
 
     return commands.general;
