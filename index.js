@@ -16,16 +16,17 @@ const { insertMessage } = require('./db');
 const commands = require('./commands');
 
 // Constants
-const generalCommandPrefix = '!';
-const premiumCommandPrefix = '#';
-const ownerCommandPrefix = '!';
-const botEmoji = '🤖';
-const completeEmoji = '✅';
-const myNumber = process.env.OWNER_ID;
-const myNumberWithJid = myNumber + '@s.whatsapp.net';
-const premiumUsers = [`${myNumber}@s.whatsapp.net`];
-const adminUsers = [`${myNumber}@s.whatsapp.net`];
-const MAX_RETRIES = 5;
+const {
+    generalCommandPrefix,
+    premiumCommandPrefix,
+    ownerCommandPrefix,
+    botEmoji,
+    completeEmoji,
+    myNumberWithJid,
+    premiumUsers,
+    adminUsers,
+    MAX_RETRIES
+} = require('./config');
 
 // Statistics
 let startCount = 1;
@@ -127,8 +128,14 @@ function handleMessageUpsert(sock) {
             return;
         }
 
-        let textMessage = msg.message[type]?.caption || msg.message[type]?.text || msg.message[type] || '';
+        if ((type === 'imageMessage' && !msg.message[type]?.caption) || (type === 'videoMessage' && !msg.message[type]?.caption)) {
+            console.log('No caption found on image/video message, ignoring');
+            return;
+        }
 
+        let textMessage = msg.message[type]?.caption || msg.message[type]?.text || msg.message[type] || '';
+        console.log('textMessage:', textMessage);
+        console.log('type:', type)
         textMessage = textMessage.replace(/\n|\r/g, ''); //remove all \n and \r
 
         if (!textMessage.startsWith(commandPrefix)) {
@@ -160,7 +167,8 @@ function handleMessageUpsert(sock) {
             const commandName = name.substring(1).toLowerCase();
 
             if (commandSet[commandName]) {
-                await commandSet[commandName].handler(sock, msg, messageObject, args);
+                const promises = [];
+                promises.push(commandSet[commandName].handler(sock, msg, messageObject, args));
 
                 // React to the message after the command has been processed
                 const reactionMessage = {
@@ -169,7 +177,9 @@ function handleMessageUpsert(sock) {
                         key: msg.key
                     }
                 };
-                await sock.sendMessage(senderNumber, reactionMessage);
+                promises.push(sock.sendMessage(senderNumber, reactionMessage));
+
+                await Promise.all(promises);
             } else {
                 throw new Error(`Unrecognized textMessage: ${commandName}`);
             }
@@ -182,7 +192,7 @@ function handleMessageUpsert(sock) {
                 JSON.stringify(messageObject),
                 senderNumber,
                 timestamp
-            );
+            ).catch(console.error);
         }
     };
 }
@@ -221,7 +231,7 @@ function handleConnectionUpdate(sock) {
                 }
                 break;
             default:
-                console.error('[LOG] Este evento de actualización es desconocido:', update);
+                console.log('[LOG] Este evento de actualización es desconocido:', update);
                 break;
             }
         } catch (error) {
