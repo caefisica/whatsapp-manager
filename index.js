@@ -28,6 +28,10 @@ const adminUsers = [`${myNumber}@s.whatsapp.net`];
 // Statistics
 let startCount = 1;
 
+// Restart behavior
+let retryCount = 0;
+const MAX_RETRIES = 5;
+
 async function start() {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
     const { version, isLatest } = await fetchLatestBaileysVersion();
@@ -190,38 +194,44 @@ async function start() {
     });
 
     sock.ev.on('connection.update', async (update) => {
+        const { connection, lastDisconnect } = update;
+        const isStatusCodeLogout = lastDisconnect.error?.output?.statusCode === DisconnectReason.loggedOut;
+        const shouldReconnect = lastDisconnect.error && !isStatusCodeLogout;
+
         try {
-            const { connection, lastDisconnect } = update;
-        
-            if(connection === 'open') {
-                console.log('[LOG] El bot se ha iniciado correctamente');
+            switch (connection) {
+            case 'open':
+                console.log('[LOG] El bot está listo para usar');
+                retryCount = 0; // Reset retry count on successful connection
                 if (startCount > 0) return;
                 await sock.sendMessage(myNumberWithJid, {
                     text: `[INICIO] - ${startCount}`,
                 });
-            } else if(connection === 'close') {
-                const shouldReconnect = lastDisconnect.error && lastDisconnect.error.output && lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut;
-                
-                if(shouldReconnect) {
-                    console.log('[ALERTA] La conexión fuera CERRADA por', lastDisconnect.error, '. Reconectando en 15 segundos...');
-                    setTimeout(() => {
-                        start();
-                    }, 1000 * 15);
+                break;
+            case 'close':
+                if (shouldReconnect) {
+                    if (retryCount < MAX_RETRIES) {
+                        const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff delay
+                        console.log(`[ALERTA] La conexión fue CERRADA ${lastDisconnect.error}, reintentando en ${delay/1000} segundos...`);
+                        retryCount++;
+                        setTimeout(start, delay);
+                    } else {
+                        console.error('[PROBLEMA] Se ha superado el número máximo de reintentos. Reinicie el bot manualmente');
+                    }
                 } else {
-                    console.log('[PROBLEMA]: Estás fuera de línea. Prepárate para escanear el código QR de nuevo');
+                    console.log('[PROBLEMA] Estás desconectado. Prepárate para escanear el código QR');
                     await dropAuth();
-                    setTimeout(() => {
-                        start();
-                    }, 1000 * 5);
+                    setTimeout(start, 1000 * 5);
                 }
+                break;
+            default:
+                console.error('[LOG] Este evento de actualización es desconocido:', update);
+                break;
             }
-    
-            console.log('[LOG] Actualización de conexión:', update);
-        } catch (err) {
-            await console.log(false, 'connection.update', err, update);
+        } catch (error) {
+            console.error('Error en connection.update', error, update);
         }
     });
-
 }
 
 start().catch(console.error);
