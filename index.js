@@ -1,6 +1,5 @@
 const {
     default: makeWASocket,
-    makeInMemoryStore,
     useMultiFileAuthState,
     fetchLatestBaileysVersion,
     makeCacheableSignalKeyStore,
@@ -22,7 +21,7 @@ const completeEmoji = '✅';
 const commands = require('./commands');
 
 const myNumber = process.env.OWNER_ID;
-const myNumberWithJid = myNumber + "@s.whatsapp.net";
+const myNumberWithJid = myNumber + '@s.whatsapp.net';
 const premiumUsers = [`${myNumber}@s.whatsapp.net`];
 const adminUsers = [`${myNumber}@s.whatsapp.net`];
 
@@ -64,7 +63,7 @@ async function start() {
 
         // Sometimes sender key is missing, which causes the bot to crash
         if (!msg.message) {
-          return;
+            return;
         }
 
         const isFromMe = msg.key.fromMe;
@@ -196,6 +195,7 @@ async function start() {
         
             if(connection === 'open') {
                 console.log('[LOG] El bot se ha iniciado correctamente');
+                if (startCount > 0) return;
                 await sock.sendMessage(myNumberWithJid, {
                     text: `[INICIO] - ${startCount}`,
                 });
@@ -203,12 +203,12 @@ async function start() {
                 const shouldReconnect = lastDisconnect.error && lastDisconnect.error.output && lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut;
                 
                 if(shouldReconnect) {
-                    console.log("[ALERTA] La conexión fuera CERRADA por", lastDisconnect.error, ". Reconectando en 15 segundos...");
+                    console.log('[ALERTA] La conexión fuera CERRADA por', lastDisconnect.error, '. Reconectando en 15 segundos...');
                     setTimeout(() => {
                         start();
                     }, 1000 * 15);
                 } else {
-                    console.log("[PROBLEMA]: Estás fuera de línea. Prepárate para escanear el código QR de nuevo");
+                    console.log('[PROBLEMA]: Estás fuera de línea. Prepárate para escanear el código QR de nuevo');
                     await dropAuth();
                     setTimeout(() => {
                         start();
@@ -216,18 +216,10 @@ async function start() {
                 }
             }
     
-            console.log("[LOG] Actualización de conexión:", update);
+            console.log('[LOG] Actualización de conexión:', update);
         } catch (err) {
-            await console.log(false, "connection.update", err, update);
+            await console.log(false, 'connection.update', err, update);
         }
-    });
-
-    sock.ev.on('chats.set', () => {
-        console.log('Obtuvimos los chats:', store.chats.all());
-    });
-
-    sock.ev.on('contacts.set', () => {
-        console.log('Obtuvimos los contactos:', Object.values(store.contacts));
     });
 
 }
