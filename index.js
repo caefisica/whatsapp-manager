@@ -203,7 +203,9 @@ async function processCommand(sock, msg, messageObject) {
     const commandName = name.substring(1).toLowerCase();
 
     if (!commandSet[commandName]) {
-        throw new Error(`Unrecognized textMessage: ${commandName}`);
+        console.error(`Unrecognized textMessage: ${commandName}`);
+        await logMessageToDatabase(messageObject, new Error(`Unrecognized textMessage: ${commandName}`));
+        return;
     }
 
     await Promise.all([
