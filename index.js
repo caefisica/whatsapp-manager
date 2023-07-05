@@ -9,6 +9,8 @@ const {
 
 require('dotenv').config();
 const pino = require('pino');
+const NodeCache = require('node-cache');
+const cache = new NodeCache();
 const { dropAuth } = require('./utils/reload');
 const { insertMessage } = require('./db');
 const commands = require('./commands');
@@ -16,7 +18,7 @@ const commands = require('./commands');
 // Constants
 const generalCommandPrefix = '!';
 const premiumCommandPrefix = '#';
-const ownerCommandPrefix = '@';
+const ownerCommandPrefix = '!';
 const botEmoji = '🤖';
 const completeEmoji = '✅';
 const myNumber = process.env.OWNER_ID;
@@ -33,10 +35,11 @@ let retryCount = 0;
 
 // Accepted message types
 const acceptedTypes = new Set([
+    'conversation',
     'textMessage',
     'imageMessage',
     'videoMessage',
-    'stickerMessage',
+    // 'stickerMessage',
     'documentWithCaptionMessage',
     'extendedTextMessage',
 ]);
@@ -79,16 +82,32 @@ function handleMessageUpsert(sock) {
     return async (m) => {
         const msg = JSON.parse(JSON.stringify(m)).messages[0];
 
-        const groupNumber = msg.key.remoteJid;
-        const senderNumber = msg.key.participant;
-        const isGroup = groupNumber.endsWith('@g.us');
+        const from = msg.key.remoteJid;
+        const isGroup = from.endsWith('@g.us');
+        let senderNumber = isGroup ? (msg.key.participant || from) : from;
 
-        if (!isGroup || !msg.message) {
+        if (senderNumber.includes(':')) { // remove : from number
+            senderNumber = senderNumber.slice(0, senderNumber.search(':')) + senderNumber.slice(senderNumber.search('@'));
+        }
+
+        let groupMetadata = '';
+        if (isGroup) {
+            groupMetadata = cache.get(from + ':groupMetadata');
+            if (!groupMetadata) {
+                groupMetadata = await sock.groupMetadata(from);
+                cache.set(from + ':groupMetadata', groupMetadata, 60 * 60); // Cache group metadata for 1 hour
+            }
+        } else {
+          return;
+        }
+
+        if (!msg.message) {
             return;
         }
 
         const isFromMe = msg.key.fromMe;
         const senderName = msg.pushName;
+        const groupName = isGroup ? groupMetadata.subject : '';
         const isPremiumUser = premiumUsers.includes(senderNumber);
         const isAdmin = adminUsers.includes(senderNumber);
 
@@ -103,16 +122,14 @@ function handleMessageUpsert(sock) {
 
         const type = Object.keys(msg.message)[0];
         if (!acceptedTypes.has(type)) {
+            console.log('Message type not accepted');
+            console.log('type:', type);
             return;
         }
 
-        let textMessage = msg.message[type]?.caption || msg.message[type]?.text || '';
-        textMessage = textMessage.replace(/\n|\r/g, ''); //remove all \n and \r
+        let textMessage = msg.message[type]?.caption || msg.message[type]?.text || msg.message[type] || '';
 
-        // Debugging info
-        console.log('type:', type);
-        console.log('textMessage:', textMessage, ', senderNumber:', senderNumber, ', senderName:', senderName, 'group', groupNumber);
-        console.log('msg:', msg)
+        textMessage = textMessage.replace(/\n|\r/g, ''); //remove all \n and \r
 
         if (!textMessage.startsWith(commandPrefix)) {
             return;
@@ -124,7 +141,8 @@ function handleMessageUpsert(sock) {
             isImage: type === 'imageMessage',
             isSticker: type === 'stickerMessage',
             messageType: type,
-            groupNumber,
+            groupName,
+            from,
             senderName,
             senderNumber,
             isFromMe,
