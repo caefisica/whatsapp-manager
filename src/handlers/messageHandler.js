@@ -1,7 +1,8 @@
 const NodeCache = require('node-cache');
 const cache = new NodeCache();
-const { insertMessage } = require('../db');
 const commands = require('../commands');
+const { logErrorToDatabase } = require('../db/errorLog');
+const { logCommandToDatabase } = require('../db/commandLog');
 const retry = require('async-retry');
 
 // Constants
@@ -24,7 +25,7 @@ const acceptedTypes = new Set([
     'textMessage',
     'imageMessage',
     'videoMessage',
-    // 'stickerMessage',
+    // 'stickerMessage', // Stickers do not have a caption (mandatory for message object)
     'documentWithCaptionMessage',
     'extendedTextMessage',
 ]);
@@ -50,7 +51,7 @@ function handleMessageUpsert(sock) {
             });
         } catch (error) {
             console.error('Error processing message:', error);
-            await logMessageToDatabase(messageObject, error);
+            await logErrorToDatabase(messageObject, error);
         }
     };
 }
@@ -151,12 +152,13 @@ async function processCommand(sock, msg, messageObject) {
 
     if (!commandSet[commandName]) {
         console.error(`Unrecognized textMessage: ${commandName}`);
-        await logMessageToDatabase(messageObject, new Error(`Unrecognized textMessage: ${commandName}`));
+        await logErrorToDatabase(messageObject, new Error(`Unrecognized textMessage: ${commandName}`));
         return;
     }
 
     await Promise.all([
         commandSet[commandName].handler(sock, msg, messageObject, args),
+        logCommandToDatabase(name, messageObject.senderNumber, commandName),
         sendReaction(sock, msg, messageObject),
     ]);
 }
@@ -182,16 +184,6 @@ async function sendReaction(sock, msg, messageObject) {
     };
 
     await sock.sendMessage(messageObject.senderNumber, reactionMessage);
-}
-
-async function logMessageToDatabase(messageObject, error) {
-    const timestamp = new Date();
-    await insertMessage(
-        JSON.stringify(messageObject),
-        messageObject.senderNumber,
-        timestamp,
-        error,
-    ).catch(console.error);
 }
 
 module.exports = {
