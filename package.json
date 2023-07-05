@@ -9,8 +9,8 @@
     "start:prod": "pm2 start index.js --name SumiBot",
     "clean:packages": "shx rm -rf node_modules package-lock.json",
     "clean:session": "shx rm -rf auth_info_baileys baileys_store.json",
-    "lint": "eslint . --ext .js commands/",
-    "lint:fix": "eslint . --ext .js commands/ --fix"
+    "lint": "eslint . --ext .js commands/ db/ config/ handlers/ utils/",
+    "lint:fix": "eslint . --ext .js commands/ db/ config/ handlers/ utils/ --fix"
   },
   "repository": "git+https://github.com/totallynotdavid/SumiBot.git",
   "keywords": [
