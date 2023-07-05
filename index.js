@@ -98,7 +98,7 @@ function handleMessageUpsert(sock) {
                 cache.set(from + ':groupMetadata', groupMetadata, 60 * 60); // Cache group metadata for 1 hour
             }
         } else {
-          return;
+            return;
         }
 
         if (!msg.message) {
