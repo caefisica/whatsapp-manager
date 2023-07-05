@@ -1,16 +1,16 @@
 {
   "name": "sumibot",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon .\\index.js",
-    "start": "node index.js",
-    "start:prod": "pm2 start index.js --name SumiBot",
+    "dev": "nodemon src/app.js",
+    "start": "node src/app.js",
+    "start:prod": "pm2 start src/app.js --name bot",
     "clean:packages": "shx rm -rf node_modules package-lock.json",
     "clean:session": "shx rm -rf auth_info_baileys baileys_store.json",
-    "lint": "eslint . --ext .js commands/ db/ config/ handlers/ utils/",
-    "lint:fix": "eslint . --ext .js commands/ db/ config/ handlers/ utils/ --fix"
+    "lint": "eslint . --ext .js src/",
+    "lint:fix": "eslint . --ext .js src/ --fix"
   },
   "repository": "git+https://github.com/totallynotdavid/SumiBot.git",
   "keywords": [

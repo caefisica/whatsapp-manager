@@ -1,7 +1,7 @@
 const {
     DisconnectReason,
 } = require('@adiwajshing/baileys');
-const { start } = require('../index');
+const { start } = require('../app');
 const { 
     myNumberWithJid,
     MAX_RETRIES,
