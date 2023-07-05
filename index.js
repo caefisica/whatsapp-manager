@@ -17,7 +17,7 @@ const commands = require('./commands');
 const generalCommandPrefix = '!';
 const premiumCommandPrefix = '#';
 const ownerCommandPrefix = '@';
-const botEmoji = '👷‍♂️';
+const botEmoji = '🤖';
 const completeEmoji = '✅';
 const myNumber = process.env.OWNER_ID;
 const myNumberWithJid = myNumber + '@s.whatsapp.net';
@@ -109,8 +109,10 @@ function handleMessageUpsert(sock) {
         let textMessage = msg.message[type]?.caption || msg.message[type]?.text || '';
         textMessage = textMessage.replace(/\n|\r/g, ''); //remove all \n and \r
 
+        // Debugging info
         console.log('type:', type);
-        console.log('textMessage:', textMessage);
+        console.log('textMessage:', textMessage, ', senderNumber:', senderNumber, ', senderName:', senderName, 'group', groupNumber);
+        console.log('msg:', msg)
 
         if (!textMessage.startsWith(commandPrefix)) {
             return;
@@ -170,15 +172,14 @@ function handleMessageUpsert(sock) {
 function handleConnectionUpdate(sock) {
     return async (update) => {
         const { connection, lastDisconnect } = update;
-        const isStatusCodeLogout = lastDisconnect.error?.output?.statusCode === DisconnectReason.loggedOut;
-        const shouldReconnect = lastDisconnect.error && !isStatusCodeLogout;
+        const isStatusCodeLogout = lastDisconnect?.error?.output?.statusCode === DisconnectReason.loggedOut;
+        const shouldReconnect = lastDisconnect?.error && !isStatusCodeLogout;
 
         try {
             switch (connection) {
             case 'open':
                 console.log('[LOG] El bot está listo para usar');
                 retryCount = 0; // Reset retry count on successful connection
-                if (startCount > 0) return;
                 await sock.sendMessage(myNumberWithJid, {
                     text: `[INICIO] - ${startCount}`,
                 });
@@ -189,6 +190,7 @@ function handleConnectionUpdate(sock) {
                         const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff delay
                         console.log(`[ALERTA] La conexión fue CERRADA ${lastDisconnect.error}, reintentando en ${delay/1000} segundos...`);
                         retryCount++;
+                        startCount++;
                         setTimeout(start, delay);
                     } else {
                         console.error('[PROBLEMA] Se ha superado el número máximo de reintentos. Reinicie el bot manualmente');
@@ -196,6 +198,7 @@ function handleConnectionUpdate(sock) {
                 } else {
                     console.log('[PROBLEMA] Estás desconectado. Prepárate para escanear el código QR');
                     await dropAuth();
+                    startCount++; // increment startCount as bot is attempting to reconnect
                     setTimeout(start, 1000 * 5);
                 }
                 break;
