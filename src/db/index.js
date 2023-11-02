@@ -1,7 +1,6 @@
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 const { v4: uuidv4 } = require('uuid');
-const fetch = require('node-fetch');
 
 require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
@@ -31,19 +30,19 @@ async function uploadImageToSupabase(userId, buffer) {
   console.log('File name:', fileName)
   console.log('Bucket name:', bucketName)
 
-  // Upload the image using Supabase SDK's standard upload method
+  // Subir la imagen usando el SDK de Supabase
   const { data, error } = await supabase.storage.from(bucketName).upload(fileName, buffer, {
     contentType: 'image/jpeg',
     upsert: false
   });
 
   if (error) {
-    console.log('Upload error:', error);
-    throw new Error('Failed to upload image to Supabase');
+    console.log('Error de subida:', error);
+    throw new Error('Error al subir la imagen a Supabase');
   }
 
   const url = `${SUPABASE_URL}/storage/v1/object/public/${bucketName}/${fileName}`;
-  console.log('Image URL:', url);
+  console.log('URL de la imagen:', url);
   return url;
 }
 
