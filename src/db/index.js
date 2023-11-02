@@ -111,8 +111,52 @@ async function getLibraryAttendanceStatus() {
   }
 }
 
+async function getTodayImageDescriptions() {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const { data: attendanceData, error: attendanceError } = await supabase
+        .from('libraryAttendance')
+        .select('imageUrl, timestamp, managerNumber')
+        .eq('action', 'open')
+        .gte('timestamp', startOfDay.toISOString())
+        .lte('timestamp', endOfDay.toISOString());
+
+    if (attendanceError) {
+        console.error("Error en la tabla 'libraryAttendance':", attendanceError);
+        throw new Error("Ha ocurrido un error al obtener los datos de la tabla 'libraryAttendance'.")
+    }
+
+    const descriptions = [];
+
+    for (const log of attendanceData) {
+        const { data: librarianData, error: librarianError } = await supabase
+            .from('librarians')
+            .select('fullName')
+            .eq('managerNumber', log.managerNumber)
+            .single();
+
+        if (librarianError) {
+            console.error("Error en la tabla 'librarians':", librarianError);
+            throw new Error("Ha ocurrido un error al obtener los datos de la tabla 'librarians'.")
+        }
+
+        const time = new Date(log.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true });
+        descriptions.push({
+            imageUrl: log.imageUrl,
+            description: `${librarianData.fullName}: ${time}`
+        });
+    }
+
+    return descriptions;
+}
+
 module.exports = {
     insertLog,
     uploadImageToSupabase,
-    getLibraryAttendanceStatus
+    getLibraryAttendanceStatus,
+    getTodayImageDescriptions
 };
