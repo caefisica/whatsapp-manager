@@ -7,6 +7,8 @@
     "dev": "nodemon src/app.js",
     "start": "node src/app.js",
     "start:prod": "pm2 start src/app.js --name bot",
+    "stop": "pm2 stop bot",
+    "restart": "pm2 restart bot",
     "clean:packages": "shx rm -rf node_modules package-lock.json",
     "clean:session": "shx rm -rf auth_info_baileys baileys_store.json",
     "lint": "eslint . --ext .js src/",
@@ -26,8 +28,10 @@
   "private": false,
   "engines" : { 
     "npm" : ">=8.0.0 <9.0.0",
-    "node" : ">=16.0.0 <17.0.0"
+    "node" : ">=16.0.0 <17.0.0",
+    "pnpm": "8.9.2"
   },
+  "packageManager": "pnpm@8.9.2",
   "dependencies": {
     "@adiwajshing/baileys": "github:WhiskeySockets/Baileys",
     "@adiwajshing/keyed-db": "^0.2.4",
