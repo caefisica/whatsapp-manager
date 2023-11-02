@@ -1,6 +1,17 @@
 const { getAccessToken, searchTrack } = require('./spotify');
+const { openLibrary, closeLibrary} = require('./asistencia_colaboradores');
 
 module.exports = {
+    open: {
+        handler: async function(sock, message, messageObject, args) {
+            openLibrary(sock, message, messageObject);
+        },
+    },
+    close: {
+        handler: async function(sock, message, messageObject, args) {
+            closeLibrary(sock, message, messageObject);
+        },
+    },
     translate: {
         handler: async function(sock, message, messageObject, args) {
             const { translateText } = require('./translate');
