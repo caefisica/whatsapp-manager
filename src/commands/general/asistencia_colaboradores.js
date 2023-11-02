@@ -26,7 +26,7 @@ async function processLibraryAction(sock, message, messageObject, action) {
 
         return `¡La biblioteca se ha ${action === 'open' ? 'abierto' : 'cerrado'}! Gracias por tu colaboración.`;
     } catch (error) {
-        let errorMessage = `Houston, tenemos un problema.`;
+        let errorMessage = 'Houston, tenemos un problema.';
         /*
         if (error.message) {
             errorMessage += `: ${error.message}`;
@@ -38,13 +38,13 @@ async function processLibraryAction(sock, message, messageObject, action) {
 }
 
 async function openLibrary(sock, message, messageObject) {
-  const responseText = await processLibraryAction(sock, message, messageObject, 'open');
-  return responseText;
+    const responseText = await processLibraryAction(sock, message, messageObject, 'open');
+    return responseText;
 }
 
 async function closeLibrary(sock, message, messageObject) {
-  const responseText = await processLibraryAction(sock, message, messageObject, 'close');
-  return responseText;
+    const responseText = await processLibraryAction(sock, message, messageObject, 'close');
+    return responseText;
 }
 
 module.exports = {
