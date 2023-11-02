@@ -48,13 +48,38 @@ async function uploadImageToSupabase(userId, buffer) {
 
 async function getLibraryAttendanceStatus() {
   try {
-      /* Obtener los registros de asistencia de los últimos 5 (limit) colaboradores que abrieron la biblioteca */
       const { data: openActions, error: openError } = await supabase
           .from('libraryAttendance')
-          .select('managerNumber, timestamp')
+          .select(`
+              timestamp,
+              action,
+              managerNumber
+          `)
           .eq('action', 'open')
           .order('timestamp', { ascending: false })
-          .limit(5);
+          .limit(1);
+
+      let librarianName = '';
+
+      if (openActions && openActions.length > 0) {
+          const managerNum = openActions[0].managerNumber;
+
+          const { data: librarianData, error: librarianError } = await supabase
+              .from('librarians')
+              .select('fullName')
+              .eq('managerNumber', managerNum)
+              .single();
+
+          if (librarianData) {
+              librarianName = librarianData.fullName;
+          } else {
+              console.error("No se encontró ningún librarian para el número:", managerNum)
+          }
+
+          if (librarianError) {
+              console.error("Error en librarians:", librarianError);
+          }
+      }
 
       const { data: closeActions, error: closeError } = await supabase
           .from('libraryAttendance')
@@ -63,17 +88,26 @@ async function getLibraryAttendanceStatus() {
           .order('timestamp', { ascending: false })
           .limit(1);
 
-      if (openError) throw openError;
-      if (closeError) throw closeError;
+      if (openError) {
+          console.error("Error en openActions:", openError);
+          throw new Error("Error al obtener los openActions de Supabase.");
+      }
 
-      return {
-          openActions: openActions,
-          closeActions: closeActions
-      };
+      if (closeError) {
+          console.error("Error en closeActions:", closeError)
+          throw new Error("Error al obtener los closeActions de Supabase.");
+      }
+
+      if (openActions && openActions.length > 0) {
+          if (!closeActions || closeActions.length === 0 || openActions[0].timestamp > closeActions[0].timestamp) {
+              return `La biblioteca está abierta. Abierto por: ${librarianName}.`;
+          }
+      }
+      return 'La biblioteca está cerrada.';
 
   } catch (error) {
-      console.error('Error en getLibraryAttendanceStatus:', error);
-      throw error;
+      console.error(error);
+      return `Houston, tenemos un problema: ${error.message}`;
   }
 }
 
