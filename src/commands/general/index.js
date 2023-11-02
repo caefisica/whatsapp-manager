@@ -19,7 +19,7 @@ module.exports = {
             });
         },
     },
-    status: {
+    estado: {
         handler: async function(sock, message, messageObject, args) {
             const responseText = await getLibraryStatus();
             await sock.sendMessage(messageObject.from, {
