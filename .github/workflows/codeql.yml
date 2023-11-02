@@ -1,4 +1,4 @@
-name: [🚓] Análisis de código
+name: 🚓 Análisis de código
 
 on:
   workflow_dispatch:
