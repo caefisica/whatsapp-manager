@@ -3,7 +3,7 @@ const { getLibraryStatus } = require('./status');
 const { getTodayImageDescriptions } = require('./../../db');
 
 module.exports = {
-    open: {
+    abierto: {
         handler: async function(sock, message, messageObject, args) {
             const responseText = await openLibrary(sock, message, messageObject);
             await sock.sendMessage(messageObject.from, {
@@ -11,7 +11,7 @@ module.exports = {
             });
         },
     },
-    close: {
+    cerrado: {
         handler: async function(sock, message, messageObject, args) {
             const responseText = await closeLibrary(sock, message, messageObject);
             await sock.sendMessage(messageObject.from, {
