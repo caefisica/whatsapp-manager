@@ -7,7 +7,7 @@ async function processLibraryAction(sock, message, messageObject, action) {
         const messageType = Object.keys(message.message)[0];
 
         if (action === 'open' && messageType !== 'imageMessage') {
-            throw new Error('Please send an image as proof when opening the library.');
+            throw new Error('Por favor envía una foto de la biblioteca para confirmar tu horario.');
         }
 
         if (messageType === 'imageMessage') {
@@ -27,7 +27,7 @@ async function processLibraryAction(sock, message, messageObject, action) {
         let successMessage = `¡La biblioteca se ha ${action === 'open' ? 'abierto' : 'cerrado'}! Gracias por tu colaboración.`;
         await sock.sendMessage(messageObject.from, { text: successMessage });
     } catch (error) {
-        let errorMessage = `Houston, tenemos un problema. Por favor, inténtalo de nuevo.`;
+        let errorMessage = `Houston, tenemos un problema: `;
         if (error.message) {
             errorMessage += `: ${error.message}`;
         }
