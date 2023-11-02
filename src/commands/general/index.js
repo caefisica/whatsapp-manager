@@ -1,15 +1,21 @@
-const { openLibrary, closeLibrary} = require('./asistencia_colaboradores');
+const { openLibrary, closeLibrary } = require('./asistencia_colaboradores');
 const { getLibraryStatus } = require('./status');
 
 module.exports = {
     open: {
         handler: async function(sock, message, messageObject, args) {
-            openLibrary(sock, message, messageObject);
+            const responseText = await openLibrary(sock, message, messageObject);
+            await sock.sendMessage(messageObject.from, {
+              text: responseText,
+            });
         },
     },
     close: {
         handler: async function(sock, message, messageObject, args) {
-            closeLibrary(sock, message, messageObject);
+            const responseText = await closeLibrary(sock, message, messageObject);
+            await sock.sendMessage(messageObject.from, {
+              text: responseText,
+            });
         },
     },
     status: {
