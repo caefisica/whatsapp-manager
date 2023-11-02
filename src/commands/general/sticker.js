@@ -1,5 +1,5 @@
 const fs = require('fs').promises;
-const { downloadMediaMessage } = require('@adiwajshing/baileys');
+const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 const { Sticker, StickerTypes } = require('wa-sticker-formatter');
 
 const getRandom = (ext) => {

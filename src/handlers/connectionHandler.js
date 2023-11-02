@@ -1,6 +1,6 @@
 const {
     DisconnectReason,
-} = require('@adiwajshing/baileys');
+} = require('@whiskeysockets/baileys');
 const { start } = require('../app');
 const { 
     myNumberWithJid,

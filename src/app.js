@@ -4,7 +4,7 @@ const {
   fetchLatestBaileysVersion,
   makeCacheableSignalKeyStore,
   isJidBroadcast,
-} = require('@adiwajshing/baileys');
+} = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const express = require('express');
 const bodyParser = require('body-parser');

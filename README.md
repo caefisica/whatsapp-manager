@@ -6,6 +6,8 @@
 
 SumiBot es un bot de WhatsApp desarrollado utilizando la biblioteca @adiwajshing/baileys. Proporciona varias funcionalidades y comandos para interactuar con usuarios en WhatsApp. Este proyecto es una reescritura del [WhatsAppBot](https://github.com/totallynotdavid/WhatsAppBot) original con el objetivo de mejorar su rendimiento.
 
+Nota: Es importante que uses Node 16, de otro modo. Supabase Storage causará problemas.
+
 ## Instalación
 
 1. **Clonar el repositorio**:
