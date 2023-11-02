@@ -1,57 +1,47 @@
 const { uploadImageToSupabase, insertLog } = require('../../db');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 
-async function openLibrary(sock, message, messageObject) {
+async function processLibraryAction(sock, message, messageObject, action) {
     try {
+        let imageUrl = null;
         const messageType = Object.keys(message.message)[0];
-        if (messageType !== 'imageMessage') {
-            await sock.sendMessage(messageObject.from, { 
-                text: `Please send an image as proof when opening the library.`
-            });
-            return;
+
+        if (action === 'open' && messageType !== 'imageMessage') {
+            throw new Error('Please send an image as proof when opening the library.');
         }
 
-        const buffer = await downloadMediaMessage(message);
-        const imageUrl = await uploadImageToSupabase(messageObject.sender, buffer);
+        if (messageType === 'imageMessage') {
+            const buffer = await downloadMediaMessage(message);
+            imageUrl = await uploadImageToSupabase(messageObject.sender, buffer);
+        }
 
         const logData = {
             timestamp: new Date().toISOString(),
-            action: 'open',
+            action: action,
             managerNumber: messageObject.sender,
             imageUrl
         };
 
         await insertLog('libraryAttendance', logData, data => data);
 
-        await sock.sendMessage(messageObject.from, { 
-            text: `¡La biblioteca se ha abierto! Gracias por tu colaboración.`
-        });
+        let successMessage = `¡La biblioteca se ha ${action === 'open' ? 'abierto' : 'cerrado'}! Gracias por tu colaboración.`;
+        await sock.sendMessage(messageObject.from, { text: successMessage });
     } catch (error) {
-        await sock.sendMessage(messageObject.from, { 
-            text: `Houston, tenemos un problema. Por favor, inténtalo de nuevo.`
-        });
-        console.log(error)
+        let errorMessage = `Houston, tenemos un problema. Por favor, inténtalo de nuevo.`;
+        if (error.message) {
+            errorMessage += `: ${error.message}`;
+        }
+        await sock.sendMessage(messageObject.from, { text: errorMessage });
+        console.log(error);
     }
 }
 
-async function closeLibrary(sock, message, messageObject) {
-    try {
-        const logData = {
-            timestamp: new Date().toISOString(),
-            action: 'close',
-            managerNumber: messageObject.sender
-        };
+function openLibrary(sock, message, messageObject) {
+    return processLibraryAction(sock, message, messageObject, 'open');
+}
 
-        await insertLog('libraryAttendance', logData, data => data);
-
-        await sock.sendMessage(messageObject.from, { 
-            text: `¡La biblioteca se ha cerrado! Gracias por tu colaboración.`
-        });
-    } catch (error) {
-        await sock.sendMessage(messageObject.from, { 
-            text: `Houston, tenemos un problema: ${error.message}`
-        });
-    }
+function closeLibrary(sock, message, messageObject) {
+    return processLibraryAction(sock, message, messageObject, 'close');
 }
 
 module.exports = {
