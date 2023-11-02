@@ -46,7 +46,39 @@ async function uploadImageToSupabase(userId, buffer) {
   return url;
 }
 
+async function getLibraryAttendanceStatus() {
+  try {
+      /* Obtener los registros de asistencia de los últimos 5 (limit) colaboradores que abrieron la biblioteca */
+      const { data: openActions, error: openError } = await supabase
+          .from('libraryAttendance')
+          .select('managerNumber, timestamp')
+          .eq('action', 'open')
+          .order('timestamp', { ascending: false })
+          .limit(5);
+
+      const { data: closeActions, error: closeError } = await supabase
+          .from('libraryAttendance')
+          .select('timestamp')
+          .eq('action', 'close')
+          .order('timestamp', { ascending: false })
+          .limit(1);
+
+      if (openError) throw openError;
+      if (closeError) throw closeError;
+
+      return {
+          openActions: openActions,
+          closeActions: closeActions
+      };
+
+  } catch (error) {
+      console.error('Error en getLibraryAttendanceStatus:', error);
+      throw error;
+  }
+}
+
 module.exports = {
     insertLog,
     uploadImageToSupabase,
+    getLibraryAttendanceStatus
 };
