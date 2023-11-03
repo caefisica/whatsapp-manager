@@ -2,26 +2,36 @@ const {
     DisconnectReason,
 } = require('@whiskeysockets/baileys');
 const { start } = require('../app');
-const { 
-    myNumberWithJid,
-    MAX_RETRIES,
-} = require('../config/constants');
-
+const { myNumberWithJid, MAX_RETRIES } = require('../config/constants');
 const { dropAuth } = require('../utils/reload');
 
-// Statistics
-let startCount = 1;
+// Estadísticas
+let startCount = 1; // Iniciar el contador de reintentos
+let retryCount = 0; // Contador de reintentos
 
-// Restart behavior
-let retryCount = 0;
+const RECONNECTION_DELAY_BASE = 1000; // Delay base para la reconexión en milisegundos
+const RECONNECTION_DELAY_MULTIPLIER = 2; // Incrementar el retraso de reconexión por este factor
 
 async function handleReconnection(reason) {
+    const tryReconnect = (delay) => {
+        setTimeout(start, delay);
+        startCount++;
+    };
+
+    const resetAuthAndReconnect = async () => {
+        await dropAuth();
+        tryReconnect(RECONNECTION_DELAY_BASE * 5);
+    };
+
+    const logAndReconnect = (message, delay) => {
+        console.log(message);
+        tryReconnect(delay);
+    };
+
     switch (reason) {
     case DisconnectReason.badSession:
         console.log('[PROBLEMA] Archivo de sesión corrupto, por favor elimine la sesión y escanee de nuevo.');
-        await dropAuth();
-        startCount++;
-        setTimeout(start, 1000 * 5);
+        await resetAuthAndReconnect();
         break;
     case DisconnectReason.loggedOut:
     case DisconnectReason.connectionClosed:
@@ -29,57 +39,53 @@ async function handleReconnection(reason) {
     case DisconnectReason.connectionReplaced:
     case DisconnectReason.restartRequired:
     case DisconnectReason.timedOut:
-        console.log(`[PROBLEMA] Desconectado: ${reason}. Reconectando...`);
         if (retryCount < MAX_RETRIES) {
-            const delay = Math.pow(2, retryCount) * 1000;
+            const delay = Math.pow(RECONNECTION_DELAY_MULTIPLIER, retryCount) * RECONNECTION_DELAY_BASE;
+            logAndReconnect(`[PROBLEMA] Desconectado: ${reason}. Reconectando...`, delay);
             retryCount++;
-            startCount++;
-            setTimeout(start, delay);
         } else {
             console.error('[PROBLEMA] Se ha superado el número máximo de reintentos. Reinicia el bot manualmente');
         }
         break;
     default:
-        console.log('[ALERTA] La conexión fue CERRADA inesperadamente, intentando reconectar...');
-        await dropAuth();
-        startCount++;
-        setTimeout(start, 1000 * 5);
+        await resetAuthAndReconnect();
         break;
     }
 }
 
+async function notifyConnectionOpen(sock) {
+    retryCount = 0; // Reset contador de reintentos cuando se conecta
+    console.log('[LOG] El bot está listo para usar');
+    await sock.sendMessage(myNumberWithJid, { text: `[INICIO] - ${startCount}` });
+}
+
+function handleUnknownConnectionState(update) {
+    console.log('[LOG] Este evento de actualización es desconocido:', update);
+}
+
 function handleConnectionUpdate(sock) {
+    const connectionHandlers = {
+        'connecting': () => console.log('[LOG] Conectando a WhatsApp...'),
+        'open': () => notifyConnectionOpen(sock),
+        'close': (reason) => handleReconnection(reason)
+    };
+
     return async (update) => {
         const { connection, lastDisconnect, isOnline, receivedPendingNotifications } = update;
-        const reason = lastDisconnect?.error?.output?.statusCode;
+
+        if (isOnline) {
+            console.log('[LOG] WhatsApp está en línea');
+            return;
+        }
+
+        if (receivedPendingNotifications) {
+            console.log('[LOG] WhatsApp recibió notificaciones pendientes');
+            return;
+        }
 
         try {
-            if (isOnline) {
-                console.log('[LOG] WhatsApp está en línea');
-                return;
-            }
-
-            if (receivedPendingNotifications) {
-                console.log('[LOG] WhatsApp recibió notificaciones pendientes');
-                return;
-            }
-
-            switch (connection) {
-            case 'connecting':
-                console.log('[LOG] Conectando a WhatsApp...');
-                break;
-            case 'open':
-                console.log('[LOG] El bot está listo para usar');
-                retryCount = 0; // Reset retry count al tener una conexión exitosa
-                await sock.sendMessage(myNumberWithJid, { text: `[INICIO] - ${startCount}` });
-                break;
-            case 'close':
-                await handleReconnection(reason);
-                break;
-            default:
-                console.log('[LOG] Este evento de actualización es desconocido:', update);
-                break;
-            }
+            const handler = connectionHandlers[connection] || handleUnknownConnectionState;
+            await handler(lastDisconnect?.error?.output?.statusCode);
         } catch (error) {
             console.error('Error en connection.update', error, update);
         }
