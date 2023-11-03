@@ -50,14 +50,27 @@ async function handleReconnection(reason) {
 
 function handleConnectionUpdate(sock) {
     return async (update) => {
-        const { connection, lastDisconnect } = update;
+        const { connection, lastDisconnect, isOnline, receivedPendingNotifications } = update;
         const reason = lastDisconnect?.error?.output?.statusCode;
 
         try {
+            if (isOnline) {
+                console.log('[LOG] WhatsApp está en línea');
+                return;
+            }
+
+            if (receivedPendingNotifications) {
+                console.log('[LOG] WhatsApp recibió notificaciones pendientes');
+                return;
+            }
+
             switch (connection) {
+            case 'connecting':
+                console.log('[LOG] Conectando a WhatsApp...');
+                break;
             case 'open':
                 console.log('[LOG] El bot está listo para usar');
-                retryCount = 0; // Reset retry count on successful connection
+                retryCount = 0; // Reset retry count al tener una conexión exitosa
                 await sock.sendMessage(myNumberWithJid, { text: `[INICIO] - ${startCount}` });
                 break;
             case 'close':
