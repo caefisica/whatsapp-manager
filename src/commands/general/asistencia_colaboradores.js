@@ -6,8 +6,8 @@ async function processLibraryAction(sock, message, messageObject, action) {
         let imageUrl = null;
         const messageType = Object.keys(message.message)[0];
 
-        if (action === 'open' && messageType !== 'imageMessage') {
-            return 'Por favor envía una foto de la biblioteca para confirmar tu horario.';
+        if ((action === 'open' || action === 'close') && messageType !== 'imageMessage') {
+            return 'Por favor envía una foto de la biblioteca para confirmar tu ingreso/salida.';
         }
 
         if (messageType === 'imageMessage') {
