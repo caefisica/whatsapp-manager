@@ -15,38 +15,53 @@ let startCount = 1;
 // Restart behavior
 let retryCount = 0;
 
+async function handleReconnection(reason) {
+    switch (reason) {
+    case DisconnectReason.badSession:
+        console.log('[PROBLEMA] Archivo de sesión corrupto, por favor elimine la sesión y escanee de nuevo.');
+        await dropAuth();
+        startCount++;
+        setTimeout(start, 1000 * 5);
+        break;
+    case DisconnectReason.loggedOut:
+    case DisconnectReason.connectionClosed:
+    case DisconnectReason.connectionLost:
+    case DisconnectReason.connectionReplaced:
+    case DisconnectReason.restartRequired:
+    case DisconnectReason.timedOut:
+        console.log(`[PROBLEMA] Desconectado: ${reason}. Reconectando...`);
+        if (retryCount < MAX_RETRIES) {
+            const delay = Math.pow(2, retryCount) * 1000;
+            retryCount++;
+            startCount++;
+            setTimeout(start, delay);
+        } else {
+            console.error('[PROBLEMA] Se ha superado el número máximo de reintentos. Reinicia el bot manualmente');
+        }
+        break;
+    default:
+        console.log('[ALERTA] La conexión fue CERRADA inesperadamente, intentando reconectar...');
+        await dropAuth();
+        startCount++;
+        setTimeout(start, 1000 * 5);
+        break;
+    }
+}
+
 function handleConnectionUpdate(sock) {
     return async (update) => {
         const { connection, lastDisconnect } = update;
-        const isStatusCodeLogout = lastDisconnect?.error?.output?.statusCode === DisconnectReason.loggedOut;
-        const shouldReconnect = lastDisconnect?.error && !isStatusCodeLogout;
+        const reason = lastDisconnect?.error?.output?.statusCode;
 
         try {
             switch (connection) {
             case 'open':
                 console.log('[LOG] El bot está listo para usar');
                 retryCount = 0; // Reset retry count on successful connection
-                await sock.sendMessage(myNumberWithJid, {
-                    text: `[INICIO] - ${startCount}`,
-                });
+                await sock.sendMessage(myNumberWithJid, { text: `[INICIO] - ${startCount}` });
                 break;
             case 'close':
-                if (shouldReconnect) {
-                    if (retryCount < MAX_RETRIES) {
-                        const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff delay
-                        console.log(`[ALERTA] La conexión fue CERRADA ${lastDisconnect.error}, reintentando en ${delay/1000} segundos...`);
-                        retryCount++;
-                        startCount++;
-                        setTimeout(start, delay);
-                    } else {
-                        console.error('[PROBLEMA] Se ha superado el número máximo de reintentos. Reinicie el bot manualmente');
-                    }
-                } else {
-                    console.log('[PROBLEMA] Estás desconectado. Prepárate para escanear el código QR');
-                    await dropAuth();
-                    startCount++; // increment startCount as bot is attempting to reconnect
-                    setTimeout(start, 1000 * 5);
-                }
+                await handleReconnection(reason);
                 break;
             default:
                 console.log('[LOG] Este evento de actualización es desconocido:', update);
