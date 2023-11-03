@@ -48,7 +48,7 @@ async function start() {
         msgRetryCounterCache,
         getMessage: async (key) => {
             const msg = await store.loadMessage(key.remoteJid, key.id);
-            return msg?.message || { conversation: 'Hello there!' };
+            return msg?.message || { conversation: '🤖 ¡Dame un momento mientras configuro algunas cosas!' };
         }
     });
 
