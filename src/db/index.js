@@ -31,6 +31,7 @@ async function uploadImageToSupabase(userId, buffer) {
     console.log('Bucket name:', bucketName);
 
     // Subir la imagen usando el SDK de Supabase
+    // eslint-disable-next-line no-unused-vars
     const { data, error } = await supabase.storage.from(bucketName).upload(fileName, buffer, {
         contentType: 'image/jpeg',
         upsert: false

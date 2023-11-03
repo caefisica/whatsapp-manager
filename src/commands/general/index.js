@@ -4,7 +4,7 @@ const { getTodayImageDescriptions } = require('./../../db');
 
 module.exports = {
     abierto: {
-        handler: async function(sock, message, messageObject, args) {
+        handler: async function(sock, message, messageObject, /* args */) {
             const responseText = await openLibrary(sock, message, messageObject);
             await sock.sendMessage(messageObject.from, {
                 text: responseText,
@@ -12,7 +12,7 @@ module.exports = {
         },
     },
     cerrado: {
-        handler: async function(sock, message, messageObject, args) {
+        handler: async function(sock, message, messageObject, /* args */) {
             const responseText = await closeLibrary(sock, message, messageObject);
             await sock.sendMessage(messageObject.from, {
                 text: responseText,
@@ -20,7 +20,7 @@ module.exports = {
         },
     },
     estado: {
-        handler: async function(sock, message, messageObject, args) {
+        handler: async function(sock, message, messageObject, /* args */) {
             const responseText = await getLibraryStatus();
             await sock.sendMessage(messageObject.from, {
                 text: responseText,
@@ -28,7 +28,7 @@ module.exports = {
         },
     },
     revisar: {
-        handler: async function(sock, message, messageObject, args) {
+        handler: async function(sock, message, messageObject, /* args */) {
             try {
                 const imagesData = await getTodayImageDescriptions();
 
