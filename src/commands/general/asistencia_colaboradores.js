@@ -7,7 +7,7 @@ async function processLibraryAction(sock, message, messageObject, action) {
         const messageType = Object.keys(message.message)[0];
 
         if (action === 'open' && messageType !== 'imageMessage') {
-            throw new Error('Por favor envía una foto de la biblioteca para confirmar tu horario.');
+            return 'Por favor envía una foto de la biblioteca para confirmar tu horario.';
         }
 
         if (messageType === 'imageMessage') {
