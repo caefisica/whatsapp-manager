@@ -5,9 +5,6 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
-  '@adiwajshing/baileys':
-    specifier: github:WhiskeySockets/Baileys
-    version: github.com/WhiskeySockets/Baileys/e24947e55ad6e3370de867b258bb33bb9e828c56(jimp@0.16.13)(link-preview-js@3.0.5)(qrcode-terminal@0.12.0)(sharp@0.30.7)
   '@adiwajshing/keyed-db':
     specifier: ^0.2.4
     version: 0.2.4
@@ -3742,52 +3739,6 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
     dev: true
-
-  github.com/WhiskeySockets/Baileys/e24947e55ad6e3370de867b258bb33bb9e828c56(jimp@0.16.13)(link-preview-js@3.0.5)(qrcode-terminal@0.12.0)(sharp@0.30.7):
-    resolution: {tarball: https://codeload.github.com/WhiskeySockets/Baileys/tar.gz/e24947e55ad6e3370de867b258bb33bb9e828c56}
-    id: github.com/WhiskeySockets/Baileys/e24947e55ad6e3370de867b258bb33bb9e828c56
-    name: '@whiskeysockets/baileys'
-    version: 6.5.0
-    requiresBuild: true
-    peerDependencies:
-      jimp: ^0.16.1
-      link-preview-js: ^3.0.0
-      qrcode-terminal: ^0.12.0
-      sharp: ^0.30.5
-    peerDependenciesMeta:
-      jimp:
-        optional: true
-      link-preview-js:
-        optional: true
-      qrcode-terminal:
-        optional: true
-      sharp:
-        optional: true
-    dependencies:
-      '@adiwajshing/keyed-db': 0.2.4
-      '@hapi/boom': 9.1.4
-      audio-decode: 2.1.5
-      axios: 1.6.0
-      cache-manager: 5.2.4
-      futoin-hkdf: 1.5.3
-      jimp: 0.16.13
-      libphonenumber-js: 1.10.49
-      libsignal: github.com/adiwajshing/libsignal-node/11dbd962ea108187c79a7c46fe4d6f790e23da97
-      link-preview-js: 3.0.5
-      music-metadata: 7.13.5
-      node-cache: 5.1.2
-      pino: 7.11.0
-      protobufjs: 6.11.4
-      qrcode-terminal: 0.12.0
-      sharp: 0.30.7
-      uuid: 9.0.1
-      ws: 8.14.2
-    transitivePeerDependencies:
-      - bufferutil
-      - debug
-      - supports-color
-      - utf-8-validate
-    dev: false
 
   github.com/adiwajshing/libsignal-node/11dbd962ea108187c79a7c46fe4d6f790e23da97:
     resolution: {tarball: https://codeload.github.com/adiwajshing/libsignal-node/tar.gz/11dbd962ea108187c79a7c46fe4d6f790e23da97}

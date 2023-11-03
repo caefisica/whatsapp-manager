@@ -26,14 +26,13 @@
   },
   "homepage": "https://github.com/totallynotdavid/SumiBot#readme",
   "private": false,
-  "engines" : { 
-    "npm" : ">=8.0.0 <9.0.0",
-    "node" : ">=16.0.0 <17.0.0",
+  "engines": {
+    "npm": ">=8.0.0 <9.0.0",
+    "node": ">=16.0.0 <17.0.0",
     "pnpm": "8.9.2"
   },
   "packageManager": "pnpm@8.9.2",
   "dependencies": {
-    "@adiwajshing/baileys": "github:WhiskeySockets/Baileys",
     "@adiwajshing/keyed-db": "^0.2.4",
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@supabase/supabase-js": "^2.26.0",
@@ -64,7 +63,8 @@
     "ignore": [
       "**/auth_info_baileys/**",
       "baileys_store.json",
-      "**/media_storage/**"
+      "**/media_storage/**",
+      "baileys_store_multi.json"
     ],
     "delay": 2500
   }
