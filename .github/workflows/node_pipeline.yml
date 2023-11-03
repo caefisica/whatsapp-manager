@@ -1,0 +1,33 @@
+name: 👷 CI/CD (Node.JS)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node: [16.x, 18.x]
+
+    steps:
+    - name: Inicializar Github Action
+      uses: actions/checkout@v3
+
+    - name: Instalar Node.js ${{ matrix.node }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node }}
+
+    - name: Instalar dependencias
+      run: npm ci
+
+    - name: Análisis lint
+      run: npm test
+
+    - name: Construir sitio
+      run: npm run build
