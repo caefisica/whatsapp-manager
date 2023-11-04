@@ -30,9 +30,9 @@
   "engines": {
     "npm": ">=8.0.0 <9.0.0",
     "node": ">=16.0.0 <17.0.0",
-    "pnpm": "8.9.2"
+    "pnpm": "8.10.2"
   },
-  "packageManager": "pnpm@8.9.2",
+  "packageManager": "pnpm@8.10.2",
   "dependencies": {
     "@adiwajshing/keyed-db": "^0.2.4",
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
