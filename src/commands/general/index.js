@@ -41,7 +41,7 @@ module.exports = {
                     }
                 } else {
                     await sock.sendMessage(messageObject.from, {
-                        text: 'No se encontraron imágenes para hoy.',
+                        text: 'Hoy nadie abrió la biblioteca.',
                     });
                 }
             } catch (error) {
