@@ -5,8 +5,8 @@ async function getLibraryStatus() {
         const statusMessage = await getLibraryAttendanceStatus();
         return statusMessage;
     } catch (error) {
-        console.error('Error getting library status:', error);
-        return 'Error obtaining the status of the library.';
+        console.error('Error al obtener el estado de la biblioteca:', error)
+        return 'Error al obtener el estado de la biblioteca';
     }
 }
 
