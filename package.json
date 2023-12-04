@@ -57,7 +57,7 @@
     "wa-sticker-formatter": "^4.4.4"
   },
   "devDependencies": {
-    "eslint": "^8.43.0",
+    "eslint": "^8.55.0",
     "nodemon": "^3.0.1",
     "shx": "^0.3.4"
   },
