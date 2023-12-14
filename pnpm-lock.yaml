@@ -51,8 +51,8 @@ dependencies:
     specifier: ^2.7.0
     version: 2.7.0
   pino:
-    specifier: ^8.14.1
-    version: 8.16.1
+    specifier: ^8.17.0
+    version: 8.17.0
   pm2:
     specifier: ^5.3.0
     version: 5.3.0
@@ -113,7 +113,7 @@ packages:
       axios: 0.24.0
       futoin-hkdf: 1.5.3
       jimp: 0.16.13
-      libsignal: github.com/adiwajshing/libsignal-node/11dbd962ea108187c79a7c46fe4d6f790e23da97
+      libsignal: git/github.com+adiwajshing/libsignal-node/11dbd962ea108187c79a7c46fe4d6f790e23da97
       link-preview-js: 3.0.5
       music-metadata: 7.13.5
       node-cache: 5.1.2
@@ -997,7 +997,7 @@ packages:
       futoin-hkdf: 1.5.3
       jimp: 0.16.13
       libphonenumber-js: 1.10.49
-      libsignal: github.com/adiwajshing/libsignal-node/11dbd962ea108187c79a7c46fe4d6f790e23da97
+      libsignal: git/github.com+adiwajshing/libsignal-node/11dbd962ea108187c79a7c46fe4d6f790e23da97
       link-preview-js: 3.0.5
       music-metadata: 7.13.5
       node-cache: 5.1.2
@@ -3174,8 +3174,8 @@ packages:
       thread-stream: 0.15.2
     dev: false
 
-  /pino@8.16.1:
-    resolution: {integrity: sha512-3bKsVhBmgPjGV9pyn4fO/8RtoVDR8ssW1ev819FsRXlRNgW8gR/9Kx+gCK4UPWd4JjrRDLWpzd/pb1AyWm3MGA==}
+  /pino@8.17.0:
+    resolution: {integrity: sha512-ey+Mku+PVPhvxglLXMg1l1zQMwSHuNrKC3MD40EDZbkckJmmuY7DYZLIOwwjZ8ix/Nvhe9dZt5H99cgkot9bAw==}
     hasBin: true
     dependencies:
       atomic-sleep: 1.0.0
@@ -4447,8 +4447,8 @@ packages:
     engines: {node: '>=10'}
     dev: true
 
-  github.com/adiwajshing/libsignal-node/11dbd962ea108187c79a7c46fe4d6f790e23da97:
-    resolution: {tarball: https://codeload.github.com/adiwajshing/libsignal-node/tar.gz/11dbd962ea108187c79a7c46fe4d6f790e23da97}
+  git/github.com+adiwajshing/libsignal-node/11dbd962ea108187c79a7c46fe4d6f790e23da97:
+    resolution: {commit: 11dbd962ea108187c79a7c46fe4d6f790e23da97, repo: git@github.com:adiwajshing/libsignal-node.git, type: git}
     name: libsignal
     version: 2.0.1
     dependencies:
