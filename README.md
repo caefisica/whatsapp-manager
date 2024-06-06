@@ -31,7 +31,7 @@ Nota: Es importante que uses Node 16, de otro modo. Supabase Storage causará pr
 
     Nota: Reemplaza <tu-id-de-propietario> con tu propio número de WhatsApp. El formato es `{códigoDePaís}{número}`.
 
-4. **Ejecutar el bot**: 
+4. **Ejecutar el bot**:
 
     ```bash
     node index.js
@@ -41,15 +41,15 @@ Nota: Es importante que uses Node 16, de otro modo. Supabase Storage causará pr
 
 Una vez que el bot esté en funcionamiento, estará a la escucha de los mensajes entrantes en WhatsApp. El bot admite los siguientes comandos:
 
-- `!translate <texto>` - Traduce el texto dado al inglés.
-- `!weather <ubicación>` - Obtiene la información meteorológica para la ubicación especificada.
-- `!reply` - Responde al remitente con un mensaje de saludo.
-- `!mention` - Menciona al propietario del bot en un mensaje.
-- `!location` - Envía una ubicación predefinida.
-- `!contact` - Envía una tarjeta de contacto con la información del propietario del bot.
-- `!template` - Envía un mensaje con una plantilla que contiene botones.
-- `!links` - Envía un mensaje con un enlace.
-- `!mp3` - Envía un mensaje de audio.
+-   `!translate <texto>` - Traduce el texto dado al inglés.
+-   `!weather <ubicación>` - Obtiene la información meteorológica para la ubicación especificada.
+-   `!reply` - Responde al remitente con un mensaje de saludo.
+-   `!mention` - Menciona al propietario del bot en un mensaje.
+-   `!location` - Envía una ubicación predefinida.
+-   `!contact` - Envía una tarjeta de contacto con la información del propietario del bot.
+-   `!template` - Envía un mensaje con una plantilla que contiene botones.
+-   `!links` - Envía un mensaje con un enlace.
+-   `!mp3` - Envía un mensaje de audio.
 
 ## Personalización
 

@@ -89,114 +89,114 @@ Actualmente, es un poco confuso al momento de trabajar con la librería Baileys.
 
 4. Mensaje con video
 
-  ```json
-  {
-    key: {
-      remoteJid: '120XXXXXXXXXXXXXXX@g.us',
-      fromMe: true,
-      id: 'XXXXXXXXXXXXXXXXXXXXXX',
-      participant: '{code}{number}@s.whatsapp.net'
-    },
-    messageTimestamp: 11111111111,
-    pushName: '{username}',
-    broadcast: false,
-    status: 2,
-    message: Message {
-      videoMessage: VideoMessage {
-        interactiveAnnotations: [],
-        url: 'https://mmg.whatsapp.net/o1/v/{long_code}',
-        mimetype: 'video/mp4',
-        fileSha256: [Uint8Array],
-        fileLength: [Long],
-        seconds: {numerical_value},
-        mediaKey: [Uint8Array],
-        caption: 'Test with video',
-        gifPlayback: false,
-        height: {numerical_value},
-        width: {numerical_value},
-        fileEncSha256: [Uint8Array],
-        directPath: '/v/tXX.XXXXX-XX/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.enc?{someValues}',
-        mediaKeyTimestamp: [Long],
-        jpegThumbnail: [Uint8Array],
-        streamingSidecar: [Uint8Array],
-        viewOnce: false
-      }
+```json
+{
+  key: {
+    remoteJid: '120XXXXXXXXXXXXXXX@g.us',
+    fromMe: true,
+    id: 'XXXXXXXXXXXXXXXXXXXXXX',
+    participant: '{code}{number}@s.whatsapp.net'
+  },
+  messageTimestamp: 11111111111,
+  pushName: '{username}',
+  broadcast: false,
+  status: 2,
+  message: Message {
+    videoMessage: VideoMessage {
+      interactiveAnnotations: [],
+      url: 'https://mmg.whatsapp.net/o1/v/{long_code}',
+      mimetype: 'video/mp4',
+      fileSha256: [Uint8Array],
+      fileLength: [Long],
+      seconds: {numerical_value},
+      mediaKey: [Uint8Array],
+      caption: 'Test with video',
+      gifPlayback: false,
+      height: {numerical_value},
+      width: {numerical_value},
+      fileEncSha256: [Uint8Array],
+      directPath: '/v/tXX.XXXXX-XX/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.enc?{someValues}',
+      mediaKeyTimestamp: [Long],
+      jpegThumbnail: [Uint8Array],
+      streamingSidecar: [Uint8Array],
+      viewOnce: false
     }
   }
-  ```
+}
+```
 
 5. Mensaje con gif
 
-  ```json
-  {
-    key: {
-      remoteJid: '120XXXXXXXXXXXXXXX@g.us',
-      fromMe: true,
-      id: 'XXXXXXXXXXXXXXXXXXXXXX',
-      participant: '{code}{number}@s.whatsapp.net'
-    },
-    messageTimestamp: 11111111111,
-    pushName: '{username}',
-    broadcast: false,
-    status: 2,
-    message: Message {
-      videoMessage: VideoMessage {
-        interactiveAnnotations: [],
-        url: 'https://mmg.whatsapp.net/o1/v/{long_code}',
-        mimetype: 'video/mp4',
-        fileSha256: [Uint8Array],
-        fileLength: [Long],
-        seconds: {numerical_value},
-        mediaKey: [Uint8Array],
-        caption: 'Test with native gif',
-        gifPlayback: true,
-        height: {numerical_value},
-        width: {numerical_value},
-        fileEncSha256: [Uint8Array],
-        directPath: '/v/tXX.XXXXX-XX/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.enc?{someValues}',
-        mediaKeyTimestamp: [Long],
-        jpegThumbnail: [Uint8Array],
-        gifAttribution: 2,
-        viewOnce: false
-      }
+```json
+{
+  key: {
+    remoteJid: '120XXXXXXXXXXXXXXX@g.us',
+    fromMe: true,
+    id: 'XXXXXXXXXXXXXXXXXXXXXX',
+    participant: '{code}{number}@s.whatsapp.net'
+  },
+  messageTimestamp: 11111111111,
+  pushName: '{username}',
+  broadcast: false,
+  status: 2,
+  message: Message {
+    videoMessage: VideoMessage {
+      interactiveAnnotations: [],
+      url: 'https://mmg.whatsapp.net/o1/v/{long_code}',
+      mimetype: 'video/mp4',
+      fileSha256: [Uint8Array],
+      fileLength: [Long],
+      seconds: {numerical_value},
+      mediaKey: [Uint8Array],
+      caption: 'Test with native gif',
+      gifPlayback: true,
+      height: {numerical_value},
+      width: {numerical_value},
+      fileEncSha256: [Uint8Array],
+      directPath: '/v/tXX.XXXXX-XX/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.enc?{someValues}',
+      mediaKeyTimestamp: [Long],
+      jpegThumbnail: [Uint8Array],
+      gifAttribution: 2,
+      viewOnce: false
     }
   }
-  ```
+}
+```
 
 6. Mensaje con enlace y miniatura:
 
-  ```json
-  {
-    key: {
-      remoteJid: '120XXXXXXXXXXXXXXX@g.us',
-      fromMe: false,
-      id: 'XXXXXXXXXXXXXXXXXXXXXX',
-      participant: '{code}{number}@s.whatsapp.net'
-    },
-    messageTimestamp: 11111111111,
-    pushName: '{username}',
-    broadcast: false,
-    message: Message {
-      extendedTextMessage: ExtendedTextMessage {
-        text: 'https://XXXXXXXXX.com/XXXXXXXXX/',
-        matchedText: 'https://XXXXXXXXX.com/XXXXXXXXX/',
-        canonicalUrl: 'https://XXXXXXXXX.com/XXXXXXXXXXXXXXXXXXX?{queries}',
-        description: 'XXXXXXXXXXXXXXXXXXXXXX',
-        title: 'XXXXXXXXXXXXXX',
-        previewType: 0,
-        jpegThumbnail: [Uint8Array],
-        thumbnailDirectPath: '/v/tXX.XXXXX-XX/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.enc?{someValues}',
-        thumbnailSha256: [Uint8Array],
-        thumbnailEncSha256: [Uint8Array],
-        mediaKey: [Uint8Array],
-        mediaKeyTimestamp: [Long],
-        thumbnailHeight: {numerical_value},
-        thumbnailWidth: {numerical_value},
-        inviteLinkGroupTypeV2: 0
-      }
+```json
+{
+  key: {
+    remoteJid: '120XXXXXXXXXXXXXXX@g.us',
+    fromMe: false,
+    id: 'XXXXXXXXXXXXXXXXXXXXXX',
+    participant: '{code}{number}@s.whatsapp.net'
+  },
+  messageTimestamp: 11111111111,
+  pushName: '{username}',
+  broadcast: false,
+  message: Message {
+    extendedTextMessage: ExtendedTextMessage {
+      text: 'https://XXXXXXXXX.com/XXXXXXXXX/',
+      matchedText: 'https://XXXXXXXXX.com/XXXXXXXXX/',
+      canonicalUrl: 'https://XXXXXXXXX.com/XXXXXXXXXXXXXXXXXXX?{queries}',
+      description: 'XXXXXXXXXXXXXXXXXXXXXX',
+      title: 'XXXXXXXXXXXXXX',
+      previewType: 0,
+      jpegThumbnail: [Uint8Array],
+      thumbnailDirectPath: '/v/tXX.XXXXX-XX/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.enc?{someValues}',
+      thumbnailSha256: [Uint8Array],
+      thumbnailEncSha256: [Uint8Array],
+      mediaKey: [Uint8Array],
+      mediaKeyTimestamp: [Long],
+      thumbnailHeight: {numerical_value},
+      thumbnailWidth: {numerical_value},
+      inviteLinkGroupTypeV2: 0
     }
   }
-  ```
+}
+```
 
 7. Reacción a un mensaje:
 
