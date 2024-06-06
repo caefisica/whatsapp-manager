@@ -1,20 +1,17 @@
 env:
-  node: true
-  commonjs: true
-  es2021: true
+    node: true
+    commonjs: true
+    es2021: true
 extends: eslint:recommended
 parserOptions:
-  ecmaVersion: latest
+    ecmaVersion: latest
 rules:
-  indent:
-    - error
-    - 4
-  linebreak-style:
-    - error
-    - unix
-  quotes:
-    - error
-    - single
-  semi:
-    - error
-    - always
+    linebreak-style:
+        - error
+        - unix
+    quotes:
+        - error
+        - double
+    semi:
+        - error
+        - always
