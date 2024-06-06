@@ -1,6 +1,3 @@
 {
-  "recommendations": [
-    "codercoder.codercoder-dark-theme",
-    "GitHub.copilot"
-  ]
+    "recommendations": ["codercoder.codercoder-dark-theme", "GitHub.copilot"]
 }
