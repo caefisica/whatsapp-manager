@@ -1,4 +1,4 @@
-const express = require('express');
+const express = require("express");
 const {
     default: makeWASocket,
     useMultiFileAuthState,
@@ -6,31 +6,34 @@ const {
     makeCacheableSignalKeyStore,
     isJidBroadcast,
     makeInMemoryStore,
-} = require('@whiskeysockets/baileys');
-const pino = require('pino');
-const NodeCache = require('node-cache');
+} = require("@whiskeysockets/baileys");
+const pino = require("pino");
+const NodeCache = require("node-cache");
 
-const { handleMessageUpsert } = require('./handlers/messageHandler');
-const { handleConnectionUpdate } = require('./handlers/connectionHandler');
+const { handleMessageUpsert } = require("./handlers/messageHandler");
+const { handleConnectionUpdate } = require("./handlers/connectionHandler");
 
 const app = express();
 app.use(express.json());
 
-const logger = pino({ level: 'silent' });
+const logger = pino({ level: "silent" });
 
-const store = makeInMemoryStore({ logger: logger.child({ level: 'silent', stream: 'store' }) });
+const store = makeInMemoryStore({
+    logger: logger.child({ level: "silent", stream: "store" }),
+});
 const msgRetryCounterCache = new NodeCache();
-const myNumberWithJid = process.env.OWNER_ID + '@s.whatsapp.net';
+const myNumberWithJid = process.env.OWNER_ID + "@s.whatsapp.net";
 
 async function start() {
-    const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
+    const { state, saveCreds } =
+        await useMultiFileAuthState("auth_info_baileys");
 
-    store.readFromFile('./baileys_store_multi.json');
+    store.readFromFile("./baileys_store_multi.json");
     setInterval(async () => {
         try {
-            await store.writeToFile('./baileys_store_multi.json');
+            await store.writeToFile("./baileys_store_multi.json");
         } catch (error) {
-            logger.error('Error escribiendo en el archivo store:', error);
+            logger.error("Error escribiendo en el archivo store:", error);
         }
     }, 10_000);
 
@@ -42,38 +45,45 @@ async function start() {
         printQRInTerminal: true,
         version: (await fetchLatestBaileysVersion()).version,
         logger: logger,
-        browser: ['Sumi', 'Safari', '3.0'],
+        browser: ["Sumi", "Safari", "3.0"],
         generateHighQualityLinkPreview: true,
-        shouldIgnoreJid: (jid) => isJidBroadcast(jid),
+        shouldIgnoreJid: jid => isJidBroadcast(jid),
         msgRetryCounterCache,
-        getMessage: async (key) => {
+        getMessage: async key => {
             const msg = await store.loadMessage(key.remoteJid, key.id);
-            return msg?.message || { conversation: '🤖 ¡Dame un momento mientras configuro algunas cosas!' };
-        }
+            return (
+                msg?.message || {
+                    conversation:
+                        "🤖 ¡Dame un momento mientras configuro algunas cosas!",
+                }
+            );
+        },
     });
 
-    sock.ev.on('creds.update', saveCreds);
+    sock.ev.on("creds.update", saveCreds);
 
-    sock.ev.on('messages.upsert', handleMessageUpsert(sock));
-    sock.ev.on('connection.update', handleConnectionUpdate(sock));
+    sock.ev.on("messages.upsert", handleMessageUpsert(sock));
+    sock.ev.on("connection.update", handleConnectionUpdate(sock));
 
-    app.post('/send-message', async (req, res) => {
+    app.post("/send-message", async (req, res) => {
         try {
-            logger.info('Request recibido:', req.body);
+            logger.info("Request recibido:", req.body);
             const { recipientNumber, text } = req.body;
-            logger.info('Enviando mensaje:', { recipientNumber, text });
-            await sock.sendMessage(recipientNumber || myNumberWithJid, { text });
-            res.status(200).json({ status: 'sent' });
+            logger.info("Enviando mensaje:", { recipientNumber, text });
+            await sock.sendMessage(recipientNumber || myNumberWithJid, {
+                text,
+            });
+            res.status(200).json({ status: "sent" });
         } catch (error) {
-            logger.error('Error enviando el mensaje:', error);
-            res.status(500).json({ status: 'error' });
+            logger.error("Error enviando el mensaje:", error);
+            res.status(500).json({ status: "error" });
         }
     });
 
     app.listen(6000, () => {
-        logger.info('La API del bot se está ejecutando en el puerto 6000');
-    }).on('error', (err) => {
-        logger.error('Servidor Express tuvo un error al iniciar:', err);
+        logger.info("La API del bot se está ejecutando en el puerto 6000");
+    }).on("error", err => {
+        logger.error("Servidor Express tuvo un error al iniciar:", err);
     });
 }
 

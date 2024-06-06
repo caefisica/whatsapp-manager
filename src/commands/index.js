@@ -1,5 +1,5 @@
 module.exports = {
-    general: require('./general'),
-    admins: require('./general'),
-    owner: require('./general'),
+    general: require("./general"),
+    admins: require("./general"),
+    owner: require("./general"),
 };
